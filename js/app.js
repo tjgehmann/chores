@@ -17,7 +17,7 @@
     { id: 'month',    label: 'Monat',        icon: '📆' },
     { id: 'stats',    label: 'Statistik',    icon: '🏆' },
     { id: 'shop',     label: 'Shop',         icon: '🎁' },
-    { id: 'ratings',  label: 'Bewerten',     icon: '⭐' },
+    { id: 'ratings',  label: 'Abnahme',      icon: '✅' },
     { id: 'vacation', label: 'Urlaub',       icon: '🏖️' },
     { id: 'manage',   label: 'Aufgaben',     icon: '⚙️' },
   ];

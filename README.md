@@ -33,9 +33,11 @@ sich aber jederzeit anpassen.
 - **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
 - **Urlaub & Vertretung** – freie Tage/Wochen eintragen; die App zeigt, welche
   Aufgaben jemand anderes übernehmen muss, und man kann eine Vertretung wählen.
-- **Zufällige Bewertung** – jede erledigte Aufgabe wird von einem *zufällig
-  ausgelosten* Familienmitglied mit Sternen und einem Kommentar bewertet
-  (Lob 💚 oder ein Tipp 💡 zum Bessermachen).
+- **Abnahme-Workflow** – jede Aufgabe durchläuft **Zu tun → Zur Abnahme → Abgenommen**:
+  Wer fertig ist, meldet die Aufgabe; ein *zufällig ausgelostes* Familienmitglied
+  **nimmt sie ab** (mit Sternen und Lob 💚) oder **gibt sie mit Begründung zurück**
+  (↩︎ Tipp 💡) – dann landet sie wieder bei „Zu tun" samt Hinweis, was noch fehlt.
+  Punkte gibt es erst nach der Abnahme.
 - **Spielerische Statistiken** – Punkte, Level, Serien (🔥 Streaks), Abzeichen
   und eine Wochen-Rangliste, die zum Mitmachen anspornt.
 - **Belohnungs- & Sticker-Shop** – erspielte Punkte gegen echte Belohnungen

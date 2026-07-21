@@ -75,7 +75,7 @@
       },
       // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
       purchases: [],
-      migrations: { uniqueIconsV1: true }, // frische Installation: bereits eindeutige Icons
+      migrations: { uniqueIconsV1: true, workflowV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -110,6 +110,15 @@
           if (f && t.emoji === f[0]) t.emoji = f[1];
         });
         state.migrations.uniqueIconsV1 = true;
+        S.save();
+      }
+      if (!state.migrations.workflowV1) {
+        // Frühere „erledigt"-Einträge in den neuen Abnahme-Workflow überführen:
+        // bereits als erledigt markierte Aufgaben gelten als abgenommen.
+        Object.values(state.completions).forEach(c => {
+          if (!c.status) c.status = c.done ? 'approved' : 'open';
+        });
+        state.migrations.workflowV1 = true;
         S.save();
       }
       return state;
@@ -199,6 +208,9 @@
       const c = state.completions[key];
       // Effektiv zuständig an diesem Tag (berücksichtigt Rotation)
       const assignees = S.assigneesFor(task, iso);
+      // Status: 'open' | 'pending' (zur Abnahme) | 'approved' (abgenommen) | 'rejected' (zurückgegeben)
+      const status = c ? (c.status || 'open') : 'open';
+      const active = status === 'open' || status === 'rejected'; // muss (noch) getan werden
       // Wer ist wegen Urlaub verhindert?
       const onVacation = assignees.filter(id => S.isOnVacation(id, iso));
       const covered = c && c.coverBy ? c.coverBy : [];
@@ -208,44 +220,62 @@
         assignees,                 // effektiv zuständige Person(en) heute
         rotates: !!task.rotate,
         date: iso,
-        done: !!(c && c.done),
+        status,
+        done: status === 'approved',
+        pending: status === 'pending',
+        rejected: status === 'rejected',
+        rejection: c && c.rejection,   // { by, reason, at } – Grund der Zurückgabe
         doneBy: (c && c.doneBy) || [],
         doneAt: c && c.doneAt,
         rating: c && c.rating,
-        rater: c && c.rater,      // wer soll bewerten (zufällig)
+        rater: c && c.rater,      // wer soll abnehmen/bewerten (zufällig)
         coverBy: covered,          // Vertretung wegen Urlaub
         onVacation,
-        needsCover: onVacation.length > 0 && covered.length === 0 && !(c && c.done),
+        needsCover: onVacation.length > 0 && covered.length === 0 && active,
       };
     },
 
-    /* -------------------------- Erledigen / Rückgängig ------------------- */
+    /* --------------------- Workflow: melden / zurückziehen --------------- */
+    // Klick auf das Häkchen: offen/zurückgegeben -> zur Abnahme melden;
+    // wartend/abgenommen -> wieder zurückziehen (rückgängig).
     toggleDone(taskId, iso) {
+      const key = S.key(taskId, iso);
+      const c = state.completions[key];
+      const status = c ? (c.status || 'open') : 'open';
+      if (status === 'open' || status === 'rejected') S.submit(taskId, iso);
+      else S.withdraw(taskId, iso);
+    },
+
+    // Aufgabe als erledigt melden -> Status „zur Abnahme" (pending)
+    submit(taskId, iso) {
       const key = S.key(taskId, iso);
       const task = S.task(taskId);
       const existing = state.completions[key];
-      if (existing && existing.done) {
-        delete state.completions[key];
-      } else {
-        // Wer erledigt? Effektiv Zuständige (Rotation, ohne Urlauber) + Vertretung
-        const assignees = S.assigneesFor(task, iso);
-        const doers = assignees.filter(id => !S.isOnVacation(id, iso));
-        const cover = existing && existing.coverBy ? existing.coverBy : [];
-        const allDoers = Array.from(new Set([...doers, ...cover]));
-        state.completions[key] = {
-          taskId, date: iso, done: true,
-          doneBy: allDoers.length ? allDoers : assignees.slice(),
-          doneAt: new Date().toISOString(),
-          coverBy: cover,
-          rater: S.pickRandomRater(allDoers),
-          rating: null,
-        };
-      }
+      const assignees = S.assigneesFor(task, iso);
+      const doers = assignees.filter(id => !S.isOnVacation(id, iso));
+      const cover = existing && existing.coverBy ? existing.coverBy : [];
+      const allDoers = Array.from(new Set([...doers, ...cover]));
+      state.completions[key] = {
+        taskId, date: iso,
+        status: 'pending', done: false,
+        doneBy: allDoers.length ? allDoers : assignees.slice(),
+        doneAt: new Date().toISOString(),
+        coverBy: cover,
+        rater: S.pickRandomRater(allDoers),  // wer nimmt ab (zufällig)
+        rating: null,
+        rejection: null,
+      };
       S.save();
     },
 
-    // Zufälliges Familienmitglied, das die Arbeit bewertet (nach Möglichkeit
-    // nicht der Erlediger selbst).
+    // Zurück auf „Zu tun" (Meldung/Abnahme rückgängig)
+    withdraw(taskId, iso) {
+      delete state.completions[S.key(taskId, iso)];
+      S.save();
+    },
+
+    // Zufälliges Familienmitglied, das abnimmt (nach Möglichkeit nicht der
+    // Erlediger selbst).
     pickRandomRater(doers) {
       const pool = state.members.map(m => m.id).filter(id => !doers.includes(id));
       const list = pool.length ? pool : state.members.map(m => m.id);
@@ -254,25 +284,45 @@
 
     reroll(taskId, iso) {
       const c = state.completions[S.key(taskId, iso)];
-      if (c && c.done && !c.rating) { c.rater = S.pickRandomRater(c.doneBy); S.save(); }
+      if (c && c.status === 'pending') { c.rater = S.pickRandomRater(c.doneBy); S.save(); }
     },
 
-    /* ------------------------------ Bewerten ----------------------------- */
-    rate(taskId, iso, { by, stars, comment, kind }) {
+    /* ----------------------- Abnahme: annehmen / zurückgeben ------------- */
+    // Abnehmen: Aufgabe gilt als erledigt, mit Bewertung/Feedback.
+    approve(taskId, iso, { by, stars, comment, kind }) {
       const c = state.completions[S.key(taskId, iso)];
       if (!c) return;
+      c.status = 'approved';
+      c.done = true;
+      c.rejection = null;
       c.rating = { by, stars, comment: (comment || '').trim(), kind, at: new Date().toISOString() };
       S.save();
     },
 
-    // Erledigte, aber noch nicht bewertete Aufgaben (neueste zuerst)
-    pendingRatings() {
+    // Zurückgeben: Aufgabe fällt zurück auf „Zu tun", mit Begründung.
+    reject(taskId, iso, { by, reason }) {
+      const c = state.completions[S.key(taskId, iso)];
+      if (!c) return;
+      c.status = 'rejected';
+      c.done = false;
+      c.rating = null;
+      c.rejection = { by, reason: (reason || '').trim(), at: new Date().toISOString() };
+      S.save();
+    },
+
+    // Rückwärtskompatibel: alte Bewertung = Abnahme
+    rate(taskId, iso, args) { S.approve(taskId, iso, args); },
+
+    // Aufgaben, die auf Abnahme warten (neueste zuerst)
+    pendingApprovals() {
       return Object.values(state.completions)
-        .filter(c => c.done && !c.rating)
+        .filter(c => (c.status || (c.done ? 'approved' : 'open')) === 'pending')
         .sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''))
         .map(c => ({ c, task: S.task(c.taskId) }))
         .filter(x => x.task);
     },
+    // Alias für bestehenden Code
+    pendingRatings() { return S.pendingApprovals(); },
 
     recentRatings(limit = 20) {
       return Object.values(state.completions)

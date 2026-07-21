@@ -127,11 +127,12 @@
   function renderBoard() {
     const m = S.member(state.child);
     const insts = childTasks(state.child);
-    const todo = insts.filter(i => !i.done);
+    const todo = insts.filter(i => i.status === 'open' || i.status === 'rejected');
+    const checking = insts.filter(i => i.pending);
     const done = insts.filter(i => i.done);
     const total = insts.length;
     const pct = total ? Math.round(done.length / total * 100) : 0;
-    const allDone = total > 0 && todo.length === 0;
+    const allDone = total > 0 && done.length === total;
 
     overlay.innerHTML = '';
     const scr = el(`<div class="kid-screen kid-board" style="--c:${m.color}">
@@ -144,17 +145,21 @@
       <div class="kid-progress">
         ${jarHTML(pct)}
         <div class="kid-dots">${insts.map(i =>
-          `<span class="kid-dot ${i.done ? 'on' : ''}">${i.done ? '⭐' : ''}</span>`).join('')}</div>
+          `<span class="kid-dot ${i.done ? 'on' : ''} ${i.pending ? 'wait' : ''}">${i.done ? '⭐' : (i.pending ? '⏳' : '')}</span>`).join('')}</div>
         <div class="kid-progress-text">${allDone ? 'Alles geschafft! 🎉' : (total === 0 ? 'Heute frei! 🎈' : 'Tipp auf einen Job!')}</div>
       </div>
 
-      <div class="kid-columns">
+      <div class="kid-columns kid-columns-3">
         <div class="kid-col todo">
           <div class="kid-col-head">Zu tun</div>
           <div class="kid-col-body todo-body"></div>
         </div>
+        <div class="kid-col checking">
+          <div class="kid-col-head">Wird geprüft 👀</div>
+          <div class="kid-col-body checking-body"></div>
+        </div>
         <div class="kid-col done">
-          <div class="kid-col-head">Geschafft 🎉</div>
+          <div class="kid-col-head">Geschafft ⭐</div>
           <div class="kid-col-body done-body"></div>
         </div>
       </div>
@@ -164,11 +169,15 @@
     scr.querySelector('.kid-switch').addEventListener('click', () => renderPicker());
 
     const todoBody = scr.querySelector('.todo-body');
+    const checkBody = scr.querySelector('.checking-body');
     const doneBody = scr.querySelector('.done-body');
-    if (!todo.length && total > 0) todoBody.appendChild(el('<div class="kid-empty">Alles erledigt! 🌟</div>'));
     if (!total) todoBody.appendChild(el('<div class="kid-empty">Heute hast du frei 🎈</div>'));
-    todo.forEach(i => todoBody.appendChild(boardCard(i, false)));
-    done.forEach(i => doneBody.appendChild(boardCard(i, true)));
+    else if (!todo.length) todoBody.appendChild(el('<div class="kid-empty">Nichts mehr zu tun! 🌟</div>'));
+    if (total && !checking.length) checkBody.appendChild(el('<div class="kid-empty small">–</div>'));
+    if (total && !done.length) doneBody.appendChild(el('<div class="kid-empty small">–</div>'));
+    todo.forEach(i => todoBody.appendChild(boardCard(i, 'todo')));
+    checking.forEach(i => checkBody.appendChild(boardCard(i, 'checking')));
+    done.forEach(i => doneBody.appendChild(boardCard(i, 'done')));
 
     overlay.appendChild(scr);
     if (allDone) setTimeout(() => celebrateAll(m), 250);
@@ -185,17 +194,24 @@
     </div>`;
   }
 
-  function boardCard(i, isDone) {
+  function boardCard(i, col) {
     const t = i.task;
     const cat = CAT[t.category] || { color: '#999' };
-    const card = el(`<button class="kid-card ${isDone ? 'is-done' : ''}" style="--cat:${cat.color}">
+    const badge = col === 'done' ? '<span class="kid-card-check">✔</span>'
+      : col === 'checking' ? '<span class="kid-card-wait">👀</span>'
+      : (i.rejected ? '<span class="kid-card-again" title="nochmal">🔁</span>' : '<span class="kid-card-go">▶</span>');
+    const card = el(`<button class="kid-card col-${col} ${i.rejected ? 'is-rejected' : ''}" style="--cat:${cat.color}">
       <span class="kid-card-icon">${t.emoji}</span>
-      <span class="kid-card-title">${esc(t.title)}</span>
-      ${isDone ? '<span class="kid-card-check">✔</span>' : '<span class="kid-card-go">▶</span>'}
+      <span class="kid-card-main">
+        <span class="kid-card-title">${esc(t.title)}</span>
+        ${i.rejected && i.rejection ? '<span class="kid-card-again-note">🔁 nochmal – tipp drauf</span>' : ''}
+      </span>
+      ${badge}
     </button>`);
-    if (isDone) {
-      // Nochmal antippen liest vor / kleine Feier – aber nicht rückgängig (kein Scheitern-Frame)
+    if (col === 'done') {
       card.addEventListener('click', () => speak(t.title));
+    } else if (col === 'checking') {
+      card.addEventListener('click', () => speak(t.title + '. Das wird gerade geprüft.'));
     } else {
       card.addEventListener('click', () => openFocus(i));
     }
@@ -207,29 +223,37 @@
   function openFocus(i) {
     const t = i.task;
     const cat = CAT[t.category] || { color: '#999' };
+    const rejBy = i.rejection ? S.member(i.rejection.by) : null;
     const focus = el(`<div class="kid-focus" style="--cat:${cat.color}">
       <button class="kid-focus-back" title="zurück">↩︎</button>
       <div class="kid-focus-inner">
         <div class="kid-focus-icon">${t.emoji}</div>
         <div class="kid-focus-title">${esc(t.title)}</div>
         ${t.description ? `<div class="kid-focus-desc">${esc(t.description)}</div>` : ''}
+        ${i.rejected && i.rejection ? `<div class="kid-focus-again">🔁 Nochmal, bitte!${i.rejection.reason ? `<br><b>${esc(i.rejection.reason)}</b>` : ''}${rejBy ? `<br><span class="kf-again-by">${rejBy.emoji} ${esc(rejBy.short)} hat nachgeschaut</span>` : ''}</div>` : ''}
         <button class="kid-speak">🔊 Vorlesen</button>
         <button class="kid-done-btn">Fertig! ✓</button>
       </div>
     </div>`);
     focus.querySelector('.kid-focus-back').addEventListener('click', () => { window.speechSynthesis && window.speechSynthesis.cancel(); focus.remove(); });
-    focus.querySelector('.kid-speak').addEventListener('click', () => speak(t.title + '. ' + (t.description || '')));
+    focus.querySelector('.kid-speak').addEventListener('click', () =>
+      speak(t.title + '. ' + (t.description || '') + (i.rejected && i.rejection && i.rejection.reason ? ' Nochmal: ' + i.rejection.reason : '')));
     focus.querySelector('.kid-done-btn').addEventListener('click', () => {
-      if (!i.done) S.toggleDone(t.id, i.date);
+      S.submit(t.id, i.date);   // als fertig melden -> wartet auf Abnahme
       chime(); confetti();
-      const yay = el(`<div class="kid-yay"><div class="kid-yay-avatar">${(S.member(state.child) || {}).emoji || '🎉'}</div><div class="kid-yay-text">Super gemacht! 🎉</div></div>`);
+      const rater = S.member(S.instance(t, i.date).rater);
+      const yay = el(`<div class="kid-yay">
+        <div class="kid-yay-avatar">${(S.member(state.child) || {}).emoji || '🎉'}</div>
+        <div class="kid-yay-text">Toll gemeldet! 🎉</div>
+        <div class="kid-yay-sub">Jetzt schaut ${rater ? rater.emoji + ' ' + esc(rater.name) : 'jemand'} drüber 👀</div>
+      </div>`);
       focus.querySelector('.kid-focus-inner').replaceWith(yay);
-      speak('Super gemacht!');
-      setTimeout(() => { focus.remove(); renderBoard(); }, 1700);
+      speak('Toll gemeldet! Jetzt wird geschaut.');
+      setTimeout(() => { focus.remove(); renderBoard(); }, 1900);
     });
     overlay.appendChild(focus);
-    // Aufgabe direkt vorlesen (Kinder können noch nicht lesen)
-    setTimeout(() => speak(t.title), 350);
+    // Aufgabe (und ggf. den Grund) direkt vorlesen
+    setTimeout(() => speak(t.title + (i.rejected && i.rejection && i.rejection.reason ? '. Nochmal: ' + i.rejection.reason : '')), 350);
   }
 
   /* --------------------------- Alles-geschafft-Feier ----------------- */

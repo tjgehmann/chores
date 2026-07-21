@@ -56,10 +56,11 @@
     // Fortschrittsbalken des Tages
     const insts = S.instancesFor(iso);
     const doneCount = insts.filter(i => i.done).length;
+    const pendingCount = insts.filter(i => i.pending).length;
     const pct = insts.length ? Math.round(doneCount / insts.length * 100) : 0;
     wrap.appendChild(el(`<div class="dayprogress">
       <div class="bar"><span style="width:${pct}%"></span></div>
-      <div class="subtle">${doneCount} / ${insts.length} Aufgaben erledigt · ${pct}%</div>
+      <div class="subtle">${doneCount} / ${insts.length} abgenommen · ${pct}%${pendingCount ? ` · <b style="color:var(--warn)">${pendingCount} wartet auf Abnahme</b>` : ''}</div>
     </div>`));
 
     // Nach Mitglied gruppieren – jede Person bekommt ihre Spalte
@@ -67,12 +68,13 @@
     S.members().forEach(m => {
       const mine = insts.filter(i => i.assignees.includes(m.id) || i.doneBy.includes(m.id) || i.coverBy.includes(m.id));
       const laneDone = mine.filter(i => i.done).length;
+      const lanePending = mine.filter(i => i.pending).length;
       const lane = el(`<div class="lane" style="--c:${m.color}">
         <div class="lane-head">
           <div class="avatar">${m.emoji}</div>
           <div>
             <div class="lane-name">${esc(m.name)}</div>
-            <div class="subtle">${laneDone}/${mine.length} erledigt${S.isOnVacation(m.id, iso) ? ' · 🏖️ Urlaub' : ''}</div>
+            <div class="subtle">${laneDone}/${mine.length} abgenommen${lanePending ? ` · ⏳ ${lanePending}` : ''}${S.isOnVacation(m.id, iso) ? ' · 🏖️ Urlaub' : ''}</div>
           </div>
         </div>
         <div class="lane-tasks"></div>
@@ -92,14 +94,28 @@
     const shared = i.assignees.length > 1;
     const isKid = i.assignees.some(id => (S.member(id) || {}).kind === 'child');
     const owner = S.member(i.assignees[0]);
-    const card = el(`<div class="task ${i.done ? 'done' : ''} ${i.needsCover ? 'cover' : ''} ${isKid ? 'kidtask' : ''}" style="--cat:${cat.color}${owner ? ';--own:' + owner.color : ''}">
-      <button class="check" title="Erledigt">${i.done ? '✔' : ''}</button>
+    const rater = S.member(i.rater);
+    // Statusabhängige Anzeige
+    let statusNote = '';
+    if (i.pending) {
+      statusNote = `<div class="await">⏳ Zur Abnahme – ${rater ? rater.emoji + ' ' + esc(rater.name) : 'jemand'} prüft noch</div>`;
+    } else if (i.done && i.rating) {
+      statusNote = ratingSummary(i);
+    } else if (i.rejected && i.rejection) {
+      const by = S.member(i.rejection.by);
+      statusNote = `<div class="reject-note">↩︎ Zurückgegeben von ${by ? by.emoji + ' ' + esc(by.short) : 'der Abnahme'}${i.rejection.reason ? `: „${esc(i.rejection.reason)}“` : ''}<br><span class="small">Bitte nochmal machen und wieder auf „fertig" tippen.</span></div>`;
+    }
+    const checkIcon = i.done ? '✔' : (i.pending ? '⏳' : '');
+    const card = el(`<div class="task status-${i.status} ${i.needsCover ? 'cover' : ''} ${isKid ? 'kidtask' : ''}" style="--cat:${cat.color}${owner ? ';--own:' + owner.color : ''}">
+      <button class="check" title="${i.pending ? 'Zurückziehen' : (i.done ? 'Rückgängig' : 'Als fertig melden')}">${checkIcon}</button>
       <div class="task-icon">${t.emoji}${owner && !shared ? `<span class="owner-badge" title="${esc(owner.name)}">${owner.emoji}</span>` : ''}</div>
       <div class="task-body">
         <div class="task-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${i.rotates ? '<span class="rottag" title="Wechselaufgabe – rotiert wöchentlich">🔄</span>' : ''}${esc(t.title)}</div>
         <div class="task-meta">
           <span class="cat" style="--c:${cat.color}">${cat.emoji} ${cat.label}</span>
           ${shared ? '<span class="cat shared">👥 gemeinsam</span>' : ''}
+          ${i.pending ? '<span class="cat pendingtag">⏳ zur Abnahme</span>' : ''}
+          ${i.rejected ? '<span class="cat rejecttag">↩︎ zurück</span>' : ''}
           <span class="pts">+${t.points}</span>
         </div>
         ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
@@ -108,7 +124,7 @@
           ${i.coverBy.map(id => `<span class="chip cover" style="--c:${S.member(id) ? S.member(id).color : '#999'}">🤝 ${esc(S.member(id) ? S.member(id).short : '')}</span>`).join('')}
         </div>
         ${i.needsCover ? `<div class="cover-note">🏖️ ${i.onVacation.map(id => esc(S.member(id).short)).join(', ')} im Urlaub – Vertretung nötig <button class="btn tiny cover-btn">Übernehmen</button></div>` : ''}
-        ${i.done && i.rating ? ratingSummary(i) : (i.done ? `<div class="await">🎲 ${esc(S.member(i.rater) ? S.member(i.rater).name : 'Jemand')} bewertet noch</div>` : '')}
+        ${statusNote}
       </div>
     </div>`);
 
@@ -168,8 +184,8 @@
       if (!insts.length) list.appendChild(el('<div class="empty small">–</div>'));
       insts.forEach(i => {
         const cat = CAT[i.task.category] || { color: '#999' };
-        const pill = el(`<button class="wpill ${i.done ? 'done' : ''}" style="--cat:${cat.color}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}">
-          <span class="wpill-emoji">${i.task.emoji}</span>
+        const pill = el(`<button class="wpill status-${i.status}" style="--cat:${cat.color}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}${i.pending ? ' – wartet auf Abnahme' : ''}">
+          <span class="wpill-emoji">${i.pending ? '⏳' : (i.rejected ? '↩︎' : i.task.emoji)}</span>
           <span class="wpill-title">${esc(i.task.title)}</span>
           <span class="wpill-who">${i.rotates ? '🔄' : ''}${i.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
         </button>`);
@@ -327,19 +343,19 @@
   };
 
   /* =====================================================================
-     BEWERTUNGEN (offen)
+     ABNAHME (Aufgaben prüfen: annehmen oder zurückgeben)
      ===================================================================== */
   UI.ratings = function (root, ctx) {
-    const pending = S.pendingRatings();
+    const pending = S.pendingApprovals();
     const wrap = el(`<div class="view">
-      <div class="view-head"><div><h2>Bewertungen</h2>
-        <div class="subtle">${pending.length} Aufgabe(n) warten auf eine Bewertung</div></div></div>
+      <div class="view-head"><div><h2>Abnahme</h2>
+        <div class="subtle">${pending.length} Aufgabe(n) warten auf Abnahme</div></div></div>
     </div>`);
 
-    wrap.appendChild(el(`<div class="hint">🎲 Jede erledigte Aufgabe wird von einem <b>zufällig ausgelosten</b> Familienmitglied bewertet. Gib Sterne und einen kurzen Kommentar – Lob oder ein Tipp zum Bessermachen.</div>`));
+    wrap.appendChild(el(`<div class="hint">🎲 Jede gemeldete Aufgabe wird von einem <b>zufällig ausgelosten</b> Familienmitglied <b>abgenommen</b>. Passt alles → <b>Annehmen</b> mit Sternen und Lob. Passt es noch nicht → <b>Zurückgeben</b> mit einem Grund; dann landet die Aufgabe wieder bei „Zu tun".</div>`));
 
     if (!pending.length) {
-      wrap.appendChild(el('<div class="empty big">Alles bewertet! 🎉<br><span class="subtle">Super gemacht.</span></div>'));
+      wrap.appendChild(el('<div class="empty big">Alles abgenommen! 🎉<br><span class="subtle">Nichts offen.</span></div>'));
       root.appendChild(wrap); return;
     }
 
@@ -351,18 +367,21 @@
           <span class="ri-emoji">${task.emoji}</span>
           <div>
             <div class="ri-title">${esc(task.title)}</div>
-            <div class="subtle small">Erledigt von ${c.doneBy.map(id => `${(S.member(id) || {}).emoji || ''} ${(S.member(id) || {}).short || ''}`).join(', ')} · ${esc(c.date)}</div>
+            <div class="subtle small">Gemeldet von ${c.doneBy.map(id => `${(S.member(id) || {}).emoji || ''} ${(S.member(id) || {}).short || ''}`).join(', ')} · ${esc(c.date)}</div>
           </div>
         </div>
-        <div class="ri-rater">🎲 Bewertet von: <b style="color:${rater ? rater.color : '#333'}">${rater ? rater.emoji + ' ' + rater.name : 'jemand'}</b>
+        <div class="ri-rater">🎲 Abnahme durch: <b style="color:${rater ? rater.color : '#333'}">${rater ? rater.emoji + ' ' + rater.name : 'jemand'}</b>
           <button class="btn tiny reroll">🎲 neu losen</button></div>
         <div class="ri-stars">${[1,2,3,4,5].map(n => `<button class="ri-star" data-n="${n}">★</button>`).join('')}</div>
         <div class="ri-kind">
           <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}" value="praise" checked> 💚 Lob</label>
           <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}" value="tip"> 💡 Tipp zum Besser­machen</label>
         </div>
-        <textarea class="ri-comment" rows="2" placeholder="Kommentar (optional) – z. B. „Toll gemacht!“ oder „Nächstes Mal auch die Ecken.“"></textarea>
-        <button class="btn primary ri-save" disabled>Bewertung speichern</button>
+        <textarea class="ri-comment" rows="2" placeholder="Feedback – beim Annehmen ein Lob, beim Zurückgeben der Grund (z. B. „Unter dem Bett liegt noch Spielzeug.“)"></textarea>
+        <div class="ri-actions">
+          <button class="btn danger ri-reject">↩︎ Zurückgeben</button>
+          <button class="btn primary ri-approve" disabled>✅ Annehmen</button>
+        </div>
       </div>`);
 
       let picked = 0;
@@ -370,16 +389,27 @@
       const paint = () => starBtns.forEach((b, idx) => b.classList.toggle('on', idx < picked));
       starBtns.forEach((b, idx) => b.addEventListener('click', () => {
         picked = idx + 1; paint();
-        item.querySelector('.ri-save').disabled = false;
+        item.querySelector('.ri-approve').disabled = false;
       }));
       item.querySelector('.reroll').addEventListener('click', () => { S.reroll(c.taskId, c.date); ctx.render(); });
-      item.querySelector('.ri-save').addEventListener('click', () => {
+      item.querySelector('.ri-approve').addEventListener('click', () => {
         if (!picked) return;
         const kind = item.querySelector(`input[name="kind_${c.taskId}_${c.date}"]:checked`).value;
-        S.rate(c.taskId, c.date, {
+        S.approve(c.taskId, c.date, {
           by: c.rater, stars: picked,
           comment: item.querySelector('.ri-comment').value, kind,
         });
+        ctx.render();
+      });
+      item.querySelector('.ri-reject').addEventListener('click', () => {
+        const reason = item.querySelector('.ri-comment').value.trim();
+        if (!reason) {
+          item.querySelector('.ri-comment').classList.add('needed');
+          item.querySelector('.ri-comment').placeholder = 'Bitte kurz sagen, WARUM es noch nicht passt.';
+          item.querySelector('.ri-comment').focus();
+          return;
+        }
+        S.reject(c.taskId, c.date, { by: c.rater, reason });
         ctx.render();
       });
       list.appendChild(item);
