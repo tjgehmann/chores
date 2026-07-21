@@ -11,6 +11,7 @@
   const D = CHORES.date;
 
   const NAV = [
+    { id: 'kids',     label: 'Kinder',       icon: '🧒', kid: true },
     { id: 'today',    label: 'Heute',        icon: '📅' },
     { id: 'week',     label: 'Woche',        icon: '🗓️' },
     { id: 'month',    label: 'Monat',        icon: '📆' },
@@ -58,10 +59,13 @@
   function buildChrome() {
     const nav = document.getElementById('nav');
     nav.innerHTML = NAV.map(n =>
-      `<button class="nav-btn" data-view="${n.id}"><span class="nav-icon">${n.icon}</span><span class="nav-label">${n.label}</span></button>`
+      `<button class="nav-btn ${n.kid ? 'kidbtn' : ''}" data-view="${n.id}"><span class="nav-icon">${n.icon}</span><span class="nav-label">${n.label}</span></button>`
     ).join('');
     nav.querySelectorAll('.nav-btn').forEach(b =>
-      b.addEventListener('click', () => ctx.go(b.dataset.view)));
+      b.addEventListener('click', () => {
+        if (b.dataset.view === 'kids') { CHORES.kid.open(); return; }
+        ctx.go(b.dataset.view);
+      }));
 
     // Kopfzeile: Titel + Familienleiste + Menü
     const family = document.getElementById('familybar');
@@ -111,6 +115,7 @@
 
   function init() {
     S.load();
+    CHORES.ctx = ctx;   // für den Kinder-Modus, um danach aufzufrischen
     buildChrome();
     render();
     // Service Worker (PWA / Offline) registrieren, falls über http(s) geladen

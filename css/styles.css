@@ -422,6 +422,160 @@ h3 { margin: 0; font-size: 1.15rem; }
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* =======================================================================
+   KINDER-MODUS – Vollbild, große Flächen, bildbasiert
+   ======================================================================= */
+.kidbtn { background: linear-gradient(135deg, #fdcb6e, #e17055) !important; color: #fff !important; }
+.kidbtn .nav-label { display: inline !important; }
+body.kidmode-on { overflow: hidden; }
+
+#kidapp {
+  position: fixed; inset: 0; z-index: 500; overflow: hidden;
+  background: radial-gradient(circle at 20% 15%, #ffeaa7, transparent 45%),
+              radial-gradient(circle at 85% 20%, #a29bfe55, transparent 40%),
+              radial-gradient(circle at 50% 100%, #55efc455, transparent 45%),
+              linear-gradient(160deg, #f9f7ff, #eaf6ff);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #2d3436;
+}
+@media (prefers-color-scheme: dark) {
+  #kidapp { background: linear-gradient(160deg, #2a2440, #1f2a3a); color: #f4f6fb; }
+}
+.kid-screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: max(18px, env(safe-area-inset-top)) 22px 22px; }
+
+.kid-home, .kid-switch {
+  width: 58px; height: 58px; border-radius: 20px; border: none; cursor: pointer;
+  font-size: 1.8rem; background: #ffffffcc; box-shadow: 0 6px 16px rgba(0,0,0,.12);
+}
+.kid-home:active, .kid-switch:active { transform: scale(.92); }
+
+/* --- Wer bist du? --- */
+.kid-picker { align-items: center; justify-content: center; text-align: center; }
+.kid-picker .kid-home { position: absolute; top: max(18px, env(safe-area-inset-top)); left: 22px; }
+.kid-h1 { font-size: 2.6rem; font-weight: 900; margin: 0 0 30px; }
+.kid-people { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+.kid-person {
+  border: none; cursor: pointer; background: #fff; border-radius: 32px; padding: 30px 40px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.14); border-bottom: 8px solid var(--c);
+  display: flex; flex-direction: column; align-items: center; gap: 10px; transition: transform .12s;
+}
+.kid-person:active { transform: scale(.94); }
+.kp-avatar { font-size: 5rem; }
+.kp-name { font-size: 1.8rem; font-weight: 900; color: var(--c); }
+
+/* --- Board --- */
+.kid-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kid-me { display: flex; align-items: center; gap: 12px; }
+.kid-me-avatar { font-size: 2.6rem; }
+.kid-me-name { font-size: 1.6rem; font-weight: 900; color: var(--c); }
+
+.kid-progress { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 10px 0 6px; }
+.kid-dots { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.kid-dot {
+  width: 34px; height: 34px; border-radius: 50%; background: #dfe4ea;
+  display: grid; place-items: center; font-size: 1.2rem; box-shadow: inset 0 2px 4px rgba(0,0,0,.08);
+}
+.kid-dot.on { background: #ffeaa7; box-shadow: 0 3px 8px #fdcb6e88; }
+.kid-progress-text { font-size: 1.5rem; font-weight: 900; }
+
+/* Belohnungsglas */
+.kid-jar { width: 74px; height: 96px; position: relative; }
+.jar-lid { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 54px; height: 12px; background: #b2bec3; border-radius: 6px; z-index: 2; }
+.jar-body {
+  position: absolute; top: 12px; left: 0; right: 0; bottom: 0; border: 4px solid #b2bec3;
+  border-radius: 10px 10px 18px 18px; overflow: hidden; background: #ffffff88;
+}
+.jar-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, #74b9ff, #0984e3); transition: height .6s ease;
+}
+.jar-shine { position: absolute; top: 6px; left: 8px; width: 10px; height: 40px; background: #ffffff66; border-radius: 6px; }
+
+.kid-columns { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 0; margin-top: 8px; }
+.kid-col { background: #ffffffaa; border-radius: 24px; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+@media (prefers-color-scheme: dark) { .kid-col { background: #ffffff14; } }
+.kid-col-head { text-align: center; font-size: 1.4rem; font-weight: 900; padding: 12px; }
+.kid-col.todo .kid-col-head { color: #0984e3; }
+.kid-col.done .kid-col-head { color: #00b894; }
+.kid-col-body { flex: 1; overflow-y: auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 12px; }
+
+.kid-card {
+  display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left;
+  border: none; background: #fff; border-radius: 20px; padding: 14px 16px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.1); border-left: 8px solid var(--cat); transition: transform .1s;
+}
+@media (prefers-color-scheme: dark) { .kid-card { background: #2a2f3a; color: #f4f6fb; } }
+.kid-card:active { transform: scale(.96); }
+.kid-card.is-done { opacity: .75; }
+.kid-card-icon {
+  flex: 0 0 auto; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
+  font-size: 2.6rem; background: color-mix(in srgb, var(--cat) 16%, #fff);
+}
+.kid-card-title { flex: 1; font-size: 1.15rem; font-weight: 800; line-height: 1.15; }
+.kid-card-go { font-size: 1.4rem; color: #b2bec3; }
+.kid-card-check { font-size: 1.8rem; color: #00b894; font-weight: 900; }
+.kid-empty { text-align: center; color: #636e72; font-size: 1.2rem; font-weight: 700; padding: 24px 8px; }
+
+/* --- Fokus (eine Aufgabe) --- */
+.kid-focus {
+  position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column;
+  padding: max(18px, env(safe-area-inset-top)) 22px 30px; animation: kidpop .2s;
+  background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cat) 25%, #fff), #f7f9ff 60%);
+}
+@media (prefers-color-scheme: dark) { .kid-focus { background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cat) 40%, #232838), #1c2230 60%); } }
+@keyframes kidpop { from { transform: scale(.96); opacity: 0; } }
+.kid-focus-back { align-self: flex-start; width: 58px; height: 58px; border-radius: 20px; border: none; cursor: pointer; font-size: 1.6rem; background: #ffffffcc; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+.kid-focus-inner { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+.kid-focus-icon {
+  width: 180px; height: 180px; border-radius: 44px; display: grid; place-items: center; font-size: 7rem;
+  background: #fff; box-shadow: 0 16px 40px rgba(0,0,0,.16); animation: bob 2.5s ease-in-out infinite;
+}
+@keyframes bob { 50% { transform: translateY(-10px); } }
+.kid-focus-title { font-size: 2.2rem; font-weight: 900; }
+.kid-focus-desc { font-size: 1.3rem; color: #636e72; max-width: 520px; }
+@media (prefers-color-scheme: dark) { .kid-focus-desc { color: #b2bec3; } }
+.kid-speak { border: none; cursor: pointer; background: #ffffff; color: #0984e3; font-weight: 800; font-size: 1.2rem; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+.kid-done-btn {
+  border: none; cursor: pointer; background: linear-gradient(135deg, #00b894, #55efc4); color: #fff;
+  font-size: 2rem; font-weight: 900; padding: 22px 60px; border-radius: 30px;
+  box-shadow: 0 12px 28px #00b89466; transition: transform .1s;
+}
+.kid-done-btn:active { transform: scale(.94); }
+
+.kid-yay { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.kid-yay-avatar { font-size: 7rem; animation: bob 1s ease-in-out infinite; }
+.kid-yay-text { font-size: 2.4rem; font-weight: 900; color: #00b894; }
+
+/* --- Alles geschafft --- */
+.kid-alldone {
+  position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 30px;
+  background: #ffffffee; animation: kidpop .25s;
+}
+@media (prefers-color-scheme: dark) { .kid-alldone { background: #1c2230ee; } }
+.kid-alldone-avatar { font-size: 6rem; animation: bob 1.4s ease-in-out infinite; }
+.kid-alldone-text { font-size: 2.2rem; font-weight: 900; }
+.kid-alldone-sub { font-size: 1.3rem; color: #636e72; }
+.kid-alldone-ok { margin-top: 14px; border: none; cursor: pointer; background: linear-gradient(135deg, #fdcb6e, #e17055); color: #fff; font-size: 1.6rem; font-weight: 900; padding: 16px 46px; border-radius: 26px; box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+
+/* --- Konfetti --- */
+.kc-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 40; }
+.kc-confetti i {
+  position: absolute; top: -20px; width: 12px; height: 16px; border-radius: 2px;
+  animation: kc-fall linear forwards;
+}
+@keyframes kc-fall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: .9; }
+}
+
+@media (max-width: 640px) {
+  .kid-card-title { font-size: 1rem; }
+  .kid-card-icon { width: 54px; height: 54px; font-size: 2.1rem; }
+  .kid-focus-icon { width: 140px; height: 140px; font-size: 5.4rem; }
+  .kid-h1 { font-size: 2.1rem; }
+  .kp-avatar { font-size: 4rem; }
+}
+
 /* ------------------------------- Modal -------------------------------- */
 .modal-back {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .45); backdrop-filter: blur(3px);

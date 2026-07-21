@@ -20,6 +20,15 @@ sich aber jederzeit anpassen.
 - **Große, klare Icons** – jede Aufgabe hat ein deutliches Symbol; bei Kindern
   zusätzlich vergrößert und mit dem persönlichen Zeichen (🦄/🚀) versehen, damit
   auch die Kleinen sofort erkennen, was für sie ansteht. Icons per Emoji-Auswahl setzbar.
+- **Kinder-Modus** 🧒 – ein eigener Vollbild-Modus für die Kinder (Button „Kinder"),
+  entwicklungsgerecht für Vierjährige gestaltet:
+  - „Wer bist du?" → großes Kind-Bild auswählen
+  - Kanban-Board **„Zu tun" → „Geschafft"** mit riesigen Icons
+  - Antippen öffnet ein **Fokus-Vollbild** mit nur einer Aufgabe
+  - **Vorlesen** per Tippen (Sprachausgabe, da noch nicht lesend)
+  - großer **„Fertig!"-Knopf** mit **Konfetti + Jubel-Klang**
+  - Fortschritt als sich füllendes **Belohnungsglas** (statt abstrakter Zahlen)
+  - Lob auf **Beitrag & Anstrengung** („du hast geholfen!"), kein Scheitern-Frame
 - **Klassisch & ausgefallen** – von „Spülmaschine ausräumen" bis „Krümel-Detektiv", „Familien-DJ" und „Licht-Wächter".
 - **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
 - **Urlaub & Vertretung** – freie Tage/Wochen eintragen; die App zeigt, welche
