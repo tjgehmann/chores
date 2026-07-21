@@ -41,7 +41,7 @@
 
   CHORES.DEFAULT_TASKS = [
     // ===================== KINDER – täglich ============================
-    t({ title: 'Spielzeug aufräumen', emoji: '🧸', category: 'ordnung', frequency: 'daily',
+    t({ title: 'Spielzeug aufräumen', emoji: '🧩', category: 'ordnung', frequency: 'daily',
         assignees: ['toni', 'leo'], points: 10, group: 'child',
         description: 'Alle Spielsachen zurück in die Kisten – Toni & Leo gemeinsam.' }),
     t({ title: 'Kuscheltiere ins Bett setzen', emoji: '🧸', category: 'ordnung', frequency: 'daily',
@@ -92,7 +92,7 @@
         description: 'Welke Blätter vorsichtig abzupfen – Dr. Toni untersucht die Pflanzen.' }),
 
     // ===================== ERWACHSENE – täglich =========================
-    t({ title: 'Spülmaschine ausräumen', emoji: '🍽️', category: 'kueche', frequency: 'daily',
+    t({ title: 'Spülmaschine ausräumen', emoji: '🥣', category: 'kueche', frequency: 'daily',
         assignees: ['papa'], points: 12, group: 'adult', rotate: true, rotationOffset: 0,
         description: 'Sauberes Geschirr ausräumen und einräumen.' }),
     t({ title: 'Spülmaschine einräumen & starten', emoji: '🫧', category: 'kueche', frequency: 'daily',
@@ -115,7 +115,7 @@
     t({ title: 'Bad putzen', emoji: '🚿', category: 'wohnen', frequency: 'weekly',
         days: [6], assignees: ['mama'], points: 18, group: 'adult', rotate: true, rotationOffset: 0,
         description: 'Waschbecken, WC, Dusche und Spiegel reinigen.' }),
-    t({ title: 'Wäsche waschen & aufhängen', emoji: '🧺', category: 'baby', frequency: 'weekly',
+    t({ title: 'Wäsche waschen & aufhängen', emoji: '👕', category: 'baby', frequency: 'weekly',
         days: [1, 4], assignees: ['mama', 'papa'], points: 15, group: 'adult',
         description: 'Eine Ladung waschen, aufhängen bzw. in den Trockner.' }),
     t({ title: 'Wocheneinkauf', emoji: '🛒', category: 'einkauf', frequency: 'weekly',

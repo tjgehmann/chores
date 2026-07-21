@@ -75,6 +75,7 @@
       },
       // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
       purchases: [],
+      migrations: { uniqueIconsV1: true }, // frische Installation: bereits eindeutige Icons
       createdAt: D.today(),
     };
   }
@@ -94,6 +95,23 @@
       if (!state.shop.rewards) state.shop.rewards = JSON.parse(JSON.stringify(CHORES.DEFAULT_REWARDS));
       if (!state.shop.stickers) state.shop.stickers = JSON.parse(JSON.stringify(CHORES.DEFAULT_STICKERS));
       state.purchases = state.purchases || [];
+
+      // Einmalige Migrationen (ändern nur, was nötig ist – Daten bleiben erhalten)
+      state.migrations = state.migrations || {};
+      if (!state.migrations.uniqueIconsV1) {
+        // Doppelte Standard-Icons eindeutig machen (nur wenn noch das alte Icon gesetzt ist)
+        const fixes = {
+          'Spielzeug aufräumen': ['🧸', '🧩'],
+          'Spülmaschine ausräumen': ['🍽️', '🥣'],
+          'Wäsche waschen & aufhängen': ['🧺', '👕'],
+        };
+        state.tasks.forEach(t => {
+          const f = fixes[t.title];
+          if (f && t.emoji === f[0]) t.emoji = f[1];
+        });
+        state.migrations.uniqueIconsV1 = true;
+        S.save();
+      }
       return state;
     },
     save() {
