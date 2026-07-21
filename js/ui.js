@@ -589,6 +589,240 @@
   };
 
   /* =====================================================================
+     SHOP – Belohnungen & Sticker
+     ===================================================================== */
+  let shopMember = null;   // aktuell ausgewähltes Mitglied (wer kauft ein)
+  let shopManage = false;  // Verwaltungsmodus (Artikel bearbeiten/löschen)
+  const RARITY = {
+    common:    { label: 'Häufig',    color: '#74b9ff' },
+    rare:      { label: 'Selten',    color: '#a29bfe' },
+    legendary: { label: 'Legendär',  color: '#fdcb6e' },
+  };
+
+  UI.shop = function (root, ctx) {
+    if (!shopMember || !S.member(shopMember)) shopMember = S.members()[0].id;
+    const me = S.member(shopMember);
+    const bal = S.balance(shopMember);
+
+    const wrap = el(`<div class="view">
+      <div class="view-head">
+        <div><h2>Belohnungs-Shop</h2>
+          <div class="subtle">Erspielte Punkte gegen Belohnungen und Sticker eintauschen.</div></div>
+        <button class="btn ghost shop-manage">${shopManage ? '✓ Fertig' : '✏️ Verwalten'}</button>
+      </div>
+    </div>`);
+    wrap.querySelector('.shop-manage').addEventListener('click', () => { shopManage = !shopManage; ctx.render(); });
+
+    // Mitglied-Auswahl mit Guthaben
+    const tabs = el('<div class="shop-tabs"></div>');
+    S.members().forEach(m => {
+      const tab = el(`<button class="shop-tab ${m.id === shopMember ? 'on' : ''}" style="--c:${m.color}">
+        <span class="st-emoji">${m.emoji}</span>
+        <span class="st-name">${esc(m.short)}</span>
+        <span class="st-bal">${S.balance(m.id)} ⭐</span>
+      </button>`);
+      tab.addEventListener('click', () => { shopMember = m.id; ctx.render(); });
+      tabs.appendChild(tab);
+    });
+    wrap.appendChild(tabs);
+
+    // Guthaben-Banner
+    wrap.appendChild(el(`<div class="wallet" style="--c:${me.color}">
+      <div class="wallet-avatar">${me.emoji}</div>
+      <div class="wallet-info">
+        <div class="wallet-name">${esc(me.name)}</div>
+        <div class="wallet-bal">${bal} <small>Punkte verfügbar</small></div>
+      </div>
+      <div class="wallet-sub subtle small">Gesamt erspielt: ${S.earned(shopMember)} · ausgegeben: ${S.spent(shopMember)}</div>
+    </div>`));
+
+    /* ---------- Belohnungen ---------- */
+    wrap.appendChild(el(`<div class="shop-sectionhead"><h3 class="section">🎁 Belohnungen</h3>
+      ${shopManage ? '<button class="btn tiny primary add-reward">+ Belohnung</button>' : ''}</div>`));
+    const rAdd = wrap.querySelector('.add-reward');
+    if (rAdd) rAdd.addEventListener('click', () => UI.rewardDialog(null, ctx));
+
+    const rewards = S.rewards().filter(x => !x.group || x.group === 'all' || x.group === me.kind);
+    const rgrid = el('<div class="shopgrid"></div>');
+    if (!rewards.length) rgrid.appendChild(el('<div class="empty">Keine Belohnungen für diese Person.</div>'));
+    rewards.forEach(rw => {
+      const can = bal >= rw.cost;
+      const card = el(`<div class="shopcard reward ${can ? '' : 'locked'}">
+        <div class="sc-emoji">${rw.emoji}</div>
+        <div class="sc-title">${esc(rw.title)}</div>
+        ${rw.description ? `<div class="sc-desc subtle small">${esc(rw.description)}</div>` : ''}
+        <div class="sc-cost">${rw.cost} ⭐</div>
+        <button class="btn primary sc-buy" ${can ? '' : 'disabled'}>${can ? 'Einlösen' : 'Zu wenig'}</button>
+        ${shopManage ? `<div class="sc-admin"><button class="btn tiny sc-edit">Bearbeiten</button><button class="btn tiny danger sc-del">✕</button></div>` : ''}
+      </div>`);
+      card.querySelector('.sc-buy').addEventListener('click', () => {
+        UI.confirmBuy(me, rw, 'reward', ctx);
+      });
+      if (shopManage) {
+        card.querySelector('.sc-edit').addEventListener('click', () => UI.rewardDialog(rw, ctx));
+        card.querySelector('.sc-del').addEventListener('click', () =>
+          UI.confirm(`„${rw.title}“ wirklich löschen?`, () => { S.removeReward(rw.id); ctx.render(); }));
+      }
+      rgrid.appendChild(card);
+    });
+    wrap.appendChild(rgrid);
+
+    /* ---------- Eingelöste Belohnungen ---------- */
+    const myRewards = S.rewardPurchases(shopMember);
+    if (myRewards.length) {
+      wrap.appendChild(el('<h3 class="section">🎟️ Eingelöste Belohnungen</h3>'));
+      const list = el('<div class="redeemed"></div>');
+      myRewards.forEach(p => {
+        const dt = D.parse(p.at.slice(0, 10));
+        const row = el(`<div class="redeem-row ${p.status}">
+          <span class="rr-emoji">${p.emoji}</span>
+          <div class="rr-main">
+            <div class="rr-title">${esc(p.title)}</div>
+            <div class="subtle small">${p.cost} ⭐ · ${dt.getDate()}.${dt.getMonth() + 1}. · ${p.status === 'open' ? '⏳ offen' : '✅ eingelöst'}</div>
+          </div>
+          ${p.status === 'open' ? '<button class="btn tiny primary rr-done">Eingelöst</button>' : ''}
+          <button class="btn tiny danger rr-cancel" title="Stornieren – Punkte zurück">↩︎</button>
+        </div>`);
+        const done = row.querySelector('.rr-done');
+        if (done) done.addEventListener('click', () => { S.markRewardDone(p.id); ctx.render(); });
+        row.querySelector('.rr-cancel').addEventListener('click', () =>
+          UI.confirm(`„${p.title}“ stornieren und ${p.cost} Punkte zurückbuchen?`,
+            () => { S.cancelPurchase(p.id); ctx.render(); }, 'Ja, stornieren'));
+        list.appendChild(row);
+      });
+      wrap.appendChild(list);
+    }
+
+    /* ---------- Sticker-Album ---------- */
+    wrap.appendChild(el(`<div class="shop-sectionhead"><h3 class="section">🌟 Sticker-Album</h3>
+      ${shopManage ? '<button class="btn tiny primary add-sticker">+ Sticker</button>' : ''}</div>`));
+    const sAdd = wrap.querySelector('.add-sticker');
+    if (sAdd) sAdd.addEventListener('click', () => UI.stickerDialog(null, ctx));
+
+    const owned = S.stickerCollection(shopMember);
+    const total = S.stickers().length;
+    const have = Object.keys(owned).length;
+    wrap.appendChild(el(`<div class="subtle small album-progress">Gesammelt: ${have} / ${total} verschiedene Sticker</div>`));
+
+    const sgrid = el('<div class="stickergrid"></div>');
+    S.stickers().forEach(sk => {
+      const count = owned[sk.id] || 0;
+      const rar = RARITY[sk.rarity] || RARITY.common;
+      const can = bal >= sk.cost;
+      const card = el(`<div class="stickercard ${count ? 'owned' : 'missing'}" style="--r:${rar.color}">
+        <div class="sk-emoji">${sk.emoji}</div>
+        ${count > 1 ? `<span class="sk-count">×${count}</span>` : ''}
+        <div class="sk-name">${esc(sk.name)}</div>
+        <div class="sk-rarity" style="color:${rar.color}">${rar.label}</div>
+        <button class="btn tiny sk-buy ${can ? 'primary' : ''}" ${can ? '' : 'disabled'}>${sk.cost} ⭐</button>
+        ${shopManage ? `<div class="sc-admin"><button class="btn tiny sk-edit">✎</button><button class="btn tiny danger sk-del">✕</button></div>` : ''}
+      </div>`);
+      card.querySelector('.sk-buy').addEventListener('click', () => UI.confirmBuy(me, sk, 'sticker', ctx));
+      if (shopManage) {
+        card.querySelector('.sk-edit').addEventListener('click', () => UI.stickerDialog(sk, ctx));
+        card.querySelector('.sk-del').addEventListener('click', () =>
+          UI.confirm(`Sticker „${sk.name}“ wirklich löschen?`, () => { S.removeSticker(sk.id); ctx.render(); }));
+      }
+      sgrid.appendChild(card);
+    });
+    wrap.appendChild(sgrid);
+    root.appendChild(wrap);
+  };
+
+  // Kauf bestätigen (mit kleiner Erfolgs-Rückmeldung)
+  UI.confirmBuy = function (member, item, type, ctx) {
+    const name = item.title || item.name;
+    UI.modal(`${item.emoji} ${esc(name)}`, `
+      <p class="buy-msg">Möchte <b style="color:${member.color}">${esc(member.name)}</b> das für
+        <b>${item.cost} Punkte</b> ${type === 'reward' ? 'einlösen' : 'kaufen'}?</p>
+      <p class="subtle small">Guthaben danach: ${S.balance(member.id) - item.cost} Punkte</p>`,
+      (box, close) => {
+        box.querySelector('.modal-save').addEventListener('click', () => {
+          const res = S.buy(member.id, type, item.id);
+          close();
+          if (res.ok) UI.toast(`${item.emoji} ${type === 'reward' ? 'Belohnung eingelöst!' : 'Sticker gesammelt!'}`);
+          ctx.render();
+        });
+      }, { save: type === 'reward' ? 'Einlösen' : 'Kaufen' });
+  };
+
+  // Belohnung anlegen/bearbeiten
+  UI.rewardDialog = function (rw, ctx) {
+    const isNew = !rw;
+    rw = rw || { title: '', emoji: '🎁', cost: 80, description: '', group: 'all' };
+    UI.modal(isNew ? 'Neue Belohnung' : 'Belohnung bearbeiten', `
+      <div class="tf">
+        <label>Titel<input class="r-title" value="${esc(rw.title)}" placeholder="z. B. Film-Abend aussuchen"></label>
+        <div class="tf-row">
+          <label class="tf-emoji">Emoji<input class="r-emoji" value="${esc(rw.emoji)}" maxlength="4"></label>
+          <label class="tf-pts">Punkte<input type="number" class="r-cost" value="${rw.cost}" min="1" max="999"></label>
+          <label>Für<select class="r-group">
+            <option value="all" ${rw.group === 'all' ? 'selected' : ''}>Alle</option>
+            <option value="child" ${rw.group === 'child' ? 'selected' : ''}>Kinder</option>
+            <option value="adult" ${rw.group === 'adult' ? 'selected' : ''}>Erwachsene</option>
+          </select></label>
+        </div>
+        <label>Beschreibung<input class="r-desc" value="${esc(rw.description || '')}" placeholder="Kurz erklären"></label>
+      </div>`,
+      (box, close) => {
+        box.querySelector('.modal-save').addEventListener('click', () => {
+          const title = box.querySelector('.r-title').value.trim();
+          if (!title) { box.querySelector('.r-title').focus(); return; }
+          const patch = {
+            title, emoji: box.querySelector('.r-emoji').value.trim() || '🎁',
+            cost: Math.max(1, Number(box.querySelector('.r-cost').value) || 1),
+            group: box.querySelector('.r-group').value,
+            description: box.querySelector('.r-desc').value.trim(),
+          };
+          if (isNew) S.addReward(patch); else S.updateReward(rw.id, patch);
+          close(); ctx.render();
+        });
+      }, { save: 'Speichern' });
+  };
+
+  // Sticker anlegen/bearbeiten
+  UI.stickerDialog = function (sk, ctx) {
+    const isNew = !sk;
+    sk = sk || { emoji: '⭐', name: '', cost: 20, rarity: 'common' };
+    UI.modal(isNew ? 'Neuer Sticker' : 'Sticker bearbeiten', `
+      <div class="tf">
+        <div class="tf-row">
+          <label class="tf-emoji">Emoji<input class="s-emoji" value="${esc(sk.emoji)}" maxlength="4"></label>
+          <label>Name<input class="s-name" value="${esc(sk.name)}" placeholder="z. B. Einhorn"></label>
+        </div>
+        <div class="tf-row">
+          <label class="tf-pts">Punkte<input type="number" class="s-cost" value="${sk.cost}" min="1" max="999"></label>
+          <label>Seltenheit<select class="s-rarity">
+            <option value="common" ${sk.rarity === 'common' ? 'selected' : ''}>Häufig</option>
+            <option value="rare" ${sk.rarity === 'rare' ? 'selected' : ''}>Selten</option>
+            <option value="legendary" ${sk.rarity === 'legendary' ? 'selected' : ''}>Legendär</option>
+          </select></label>
+        </div>
+      </div>`,
+      (box, close) => {
+        box.querySelector('.modal-save').addEventListener('click', () => {
+          const name = box.querySelector('.s-name').value.trim();
+          if (!name) { box.querySelector('.s-name').focus(); return; }
+          const patch = {
+            emoji: box.querySelector('.s-emoji').value.trim() || '⭐', name,
+            cost: Math.max(1, Number(box.querySelector('.s-cost').value) || 1),
+            rarity: box.querySelector('.s-rarity').value,
+          };
+          if (isNew) S.addSticker(patch); else S.updateSticker(sk.id, patch);
+          close(); ctx.render();
+        });
+      }, { save: 'Speichern' });
+  };
+
+  // Kleine, kurz eingeblendete Rückmeldung
+  UI.toast = function (msg) {
+    const t = el(`<div class="toast">${esc(msg)}</div>`);
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 1600);
+  };
+
+  /* =====================================================================
      Modal-Helfer
      ===================================================================== */
   UI.modal = function (title, bodyHtml, setup, opts = {}) {
@@ -611,10 +845,10 @@
     return { close };
   };
 
-  UI.confirm = function (msg, onYes) {
+  UI.confirm = function (msg, onYes, saveLabel) {
     UI.modal('Bestätigen', `<p class="confirm-msg">${esc(msg)}</p>`, (box, close) => {
       box.querySelector('.modal-save').addEventListener('click', () => { close(); onYes(); });
-    }, { save: 'Ja, löschen' });
+    }, { save: saveLabel || 'Ja, löschen' });
   };
 
 })(window.CHORES = window.CHORES || {});

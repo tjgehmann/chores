@@ -15,6 +15,7 @@
     { id: 'week',     label: 'Woche',        icon: '🗓️' },
     { id: 'month',    label: 'Monat',        icon: '📆' },
     { id: 'stats',    label: 'Statistik',    icon: '🏆' },
+    { id: 'shop',     label: 'Shop',         icon: '🎁' },
     { id: 'ratings',  label: 'Bewerten',     icon: '⭐' },
     { id: 'vacation', label: 'Urlaub',       icon: '🏖️' },
     { id: 'manage',   label: 'Aufgaben',     icon: '⚙️' },

@@ -23,6 +23,11 @@ sich aber jederzeit anpassen.
   (Lob 💚 oder ein Tipp 💡 zum Bessermachen).
 - **Spielerische Statistiken** – Punkte, Level, Serien (🔥 Streaks), Abzeichen
   und eine Wochen-Rangliste, die zum Mitmachen anspornt.
+- **Belohnungs- & Sticker-Shop** – erspielte Punkte gegen echte Belohnungen
+  (z. B. „Film-Abend aussuchen", „ein Eis") oder digitale Sammel-Sticker
+  eintauschen. Jedes Familienmitglied hat ein eigenes Punkte-Guthaben und ein
+  Sticker-Album zum Vervollständigen. Belohnungen können von Erwachsenen als
+  „eingelöst" markiert oder wieder storniert werden (Punkte zurück).
 
 ## 📱 Auf dem iPad einrichten
 

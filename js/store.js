@@ -62,6 +62,13 @@
       completions: {},
       // Urlaube: [{ id, member, start, end }]
       vacations: [],
+      // Shop: einlösbare Belohnungen & Sammel-Sticker
+      shop: {
+        rewards: JSON.parse(JSON.stringify(CHORES.DEFAULT_REWARDS)),
+        stickers: JSON.parse(JSON.stringify(CHORES.DEFAULT_STICKERS)),
+      },
+      // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
+      purchases: [],
       createdAt: D.today(),
     };
   }
@@ -74,9 +81,13 @@
       } catch (e) {
         state = defaultState();
       }
-      // Sicherstellen, dass Felder existieren
+      // Sicherstellen, dass Felder existieren (auch bei älteren Speicherständen)
       state.completions = state.completions || {};
       state.vacations = state.vacations || [];
+      state.shop = state.shop || {};
+      if (!state.shop.rewards) state.shop.rewards = JSON.parse(JSON.stringify(CHORES.DEFAULT_REWARDS));
+      if (!state.shop.stickers) state.shop.stickers = JSON.parse(JSON.stringify(CHORES.DEFAULT_STICKERS));
+      state.purchases = state.purchases || [];
       return state;
     },
     save() {
@@ -314,6 +325,82 @@
       add(all.avgStars >= 4.5 && all.ratedCount >= 3, '✨', 'Top-Qualität');
       return { list, streak };
     },
+
+    /* ------------------------------- Shop -------------------------------- */
+    rewards() { return state.shop.rewards; },
+    stickers() { return state.shop.stickers; },
+    reward(id) { return state.shop.rewards.find(x => x.id === id); },
+    sticker(id) { return state.shop.stickers.find(x => x.id === id); },
+
+    // Gesamt erspielte Punkte (aller Zeiten) eines Mitglieds
+    earned(memberId) {
+      const s = S.statsAllTime()[memberId];
+      return s ? s.points : 0;
+    },
+    // Bereits ausgegebene Punkte
+    spent(memberId) {
+      return state.purchases
+        .filter(p => p.member === memberId)
+        .reduce((sum, p) => sum + (p.cost || 0), 0);
+    },
+    // Verfügbares Guthaben = erspielt − ausgegeben
+    balance(memberId) { return S.earned(memberId) - S.spent(memberId); },
+
+    // Kauf/Einlösung. type: 'reward' | 'sticker'. Gibt true bei Erfolg.
+    buy(memberId, type, refId) {
+      const item = type === 'reward' ? S.reward(refId) : S.sticker(refId);
+      if (!item) return { ok: false, reason: 'not_found' };
+      if (S.balance(memberId) < item.cost) return { ok: false, reason: 'too_expensive' };
+      state.purchases.push({
+        id: 'buy_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        member: memberId, type, refId,
+        title: item.title || item.name, emoji: item.emoji, cost: item.cost,
+        at: new Date().toISOString(),
+        status: type === 'reward' ? 'open' : 'done', // Belohnung: erst offen, bis eingelöst
+      });
+      S.save();
+      return { ok: true };
+    },
+
+    // Sticker-Sammlung eines Mitglieds: { stickerId: anzahl }
+    stickerCollection(memberId) {
+      const map = {};
+      state.purchases
+        .filter(p => p.member === memberId && p.type === 'sticker')
+        .forEach(p => { map[p.refId] = (map[p.refId] || 0) + 1; });
+      return map;
+    },
+
+    // Eingelöste Belohnungen (neueste zuerst), optional gefiltert
+    rewardPurchases(memberId) {
+      return state.purchases
+        .filter(p => p.type === 'reward' && (!memberId || p.member === memberId))
+        .sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    },
+    // Belohnung als eingelöst/erledigt markieren (Erwachsene)
+    markRewardDone(purchaseId) {
+      const p = state.purchases.find(x => x.id === purchaseId);
+      if (p) { p.status = 'done'; S.save(); }
+    },
+    // Kauf stornieren -> Punkte werden automatisch wieder gutgeschrieben
+    cancelPurchase(purchaseId) {
+      state.purchases = state.purchases.filter(x => x.id !== purchaseId);
+      S.save();
+    },
+
+    // Verwaltung der Shop-Artikel
+    addReward(reward) {
+      reward.id = 'reward_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      state.shop.rewards.push(reward); S.save(); return reward;
+    },
+    updateReward(id, patch) { const x = S.reward(id); if (x) { Object.assign(x, patch); S.save(); } return x; },
+    removeReward(id) { state.shop.rewards = state.shop.rewards.filter(x => x.id !== id); S.save(); },
+    addSticker(sticker) {
+      sticker.id = 'sticker_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      state.shop.stickers.push(sticker); S.save(); return sticker;
+    },
+    updateSticker(id, patch) { const x = S.sticker(id); if (x) { Object.assign(x, patch); S.save(); } return x; },
+    removeSticker(id) { state.shop.stickers = state.shop.stickers.filter(x => x.id !== id); S.save(); },
   };
 
 })(window.CHORES = window.CHORES || {});

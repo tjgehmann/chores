@@ -328,6 +328,83 @@ h3 { margin: 0; font-size: 1.15rem; }
 .mr-main { flex: 1; min-width: 0; }
 .mr-title { font-weight: 700; }
 
+/* -------------------------------- Shop -------------------------------- */
+.shop-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.shop-tab {
+  flex: 1 1 130px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--ink);
+  padding: 12px; border-radius: 16px; font: inherit; transition: transform .1s;
+}
+.shop-tab:active { transform: scale(.97); }
+.shop-tab.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, var(--card)); }
+.st-emoji { font-size: 1.8rem; }
+.st-name { font-weight: 800; }
+.st-bal { font-size: .85rem; font-weight: 800; color: var(--c); }
+
+.wallet {
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "a i" "s s";
+  gap: 4px 16px; align-items: center; background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 8px; border-left: 6px solid var(--c);
+}
+.wallet-avatar { grid-area: a; font-size: 2.6rem; }
+.wallet-info { grid-area: i; }
+.wallet-name { font-weight: 800; font-size: 1.1rem; }
+.wallet-bal { font-size: 1.9rem; font-weight: 900; color: var(--c); line-height: 1.1; }
+.wallet-bal small { font-size: .7rem; color: var(--muted); font-weight: 700; }
+.wallet-sub { grid-area: s; }
+
+.shop-sectionhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.shop-sectionhead .section { margin-bottom: 8px; }
+
+.shopgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+.shopcard {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.shopcard.locked { opacity: .6; }
+.sc-emoji { font-size: 2.6rem; }
+.sc-title { font-weight: 800; }
+.sc-desc { flex: 1; }
+.sc-cost { font-weight: 900; color: var(--good); font-size: 1.1rem; }
+.shopcard .sc-buy { width: 100%; }
+.sc-admin { display: flex; gap: 6px; width: 100%; }
+.sc-admin .btn { flex: 1; }
+
+.redeemed { display: flex; flex-direction: column; gap: 8px; }
+.redeem-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 10px 14px; border-left: 4px solid var(--warn); }
+.redeem-row.done { border-left-color: var(--good); opacity: .8; }
+.rr-emoji { font-size: 1.6rem; }
+.rr-main { flex: 1; min-width: 0; }
+.rr-title { font-weight: 700; }
+
+.album-progress { margin: 4px 0 12px; font-weight: 700; }
+.stickergrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.stickercard {
+  position: relative; background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
+  padding: 14px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 2px solid var(--r);
+}
+.stickercard.missing { border-style: dashed; }
+.stickercard.missing .sk-emoji { filter: grayscale(1); opacity: .35; }
+.sk-emoji { font-size: 2.6rem; }
+.sk-count {
+  position: absolute; top: 8px; right: 8px; background: var(--r); color: #3a2f00;
+  font-size: .72rem; font-weight: 900; padding: 1px 7px; border-radius: 999px;
+}
+.sk-name { font-weight: 700; font-size: .85rem; }
+.sk-rarity { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+.stickercard .sk-buy { margin-top: 4px; }
+.buy-msg { font-size: 1.05rem; }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; bottom: 40px; transform: translate(-50%, 20px);
+  background: var(--ink); color: var(--bg2); font-weight: 800; padding: 14px 22px;
+  border-radius: 999px; box-shadow: var(--shadow-lg); z-index: 200; opacity: 0;
+  transition: opacity .25s, transform .25s; font-size: 1.05rem; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* ------------------------------- Modal -------------------------------- */
 .modal-back {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .45); backdrop-filter: blur(3px);

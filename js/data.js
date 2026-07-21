@@ -157,4 +157,79 @@
         description: '10-Minuten-Sprint: Alle räumen gemeinsam so viel auf wie möglich!' }),
   ];
 
+  /* =======================================================================
+     BELOHNUNGEN – gegen erspielte Punkte einlösbar (echte Belohnungen).
+     group: 'child' | 'adult' | 'all'
+     ======================================================================= */
+  let _rid = 0;
+  const r = (o) => Object.assign({ id: 'reward_' + (++_rid) }, o);
+
+  CHORES.DEFAULT_REWARDS = [
+    // --- Kinder ---
+    r({ title: 'Extra Gute-Nacht-Geschichte', emoji: '📖', cost: 50, group: 'child',
+        description: 'Heute Abend gibt es eine Geschichte mehr.' }),
+    r({ title: 'Lieblingsessen aussuchen', emoji: '🍝', cost: 80, group: 'child',
+        description: 'Du darfst bestimmen, was es zum Abendessen gibt.' }),
+    r({ title: '30 Min extra Spielzeit', emoji: '🧩', cost: 90, group: 'child',
+        description: '30 Minuten länger spielen oder aufbleiben.' }),
+    r({ title: 'Ein Eis 🍦', emoji: '🍦', cost: 70, group: 'child',
+        description: 'Ein leckeres Eis als Belohnung.' }),
+    r({ title: 'Film-Abend aussuchen', emoji: '🎬', cost: 120, group: 'child',
+        description: 'Du wählst den Film für den Familien-Filmabend.' }),
+    r({ title: 'Ausflug zum Spielplatz', emoji: '🛝', cost: 150, group: 'child',
+        description: 'Extra-Runde auf dem Lieblingsspielplatz.' }),
+    r({ title: 'Freund/in einladen', emoji: '🧑‍🤝‍🧑', cost: 180, group: 'child',
+        description: 'Ein Kind zum Spielen einladen.' }),
+    r({ title: 'Überraschungstüte', emoji: '🎁', cost: 250, group: 'child',
+        description: 'Eine kleine Überraschung zum Auspacken.' }),
+
+    // --- Erwachsene ---
+    r({ title: 'Ein Abend aufgabenfrei', emoji: '🛋️', cost: 120, group: 'adult',
+        description: 'Heute übernimmt der/die andere alle Aufgaben.' }),
+    r({ title: 'Ausschlafen am Wochenende', emoji: '😴', cost: 140, group: 'adult',
+        description: 'Einmal richtig ausschlafen – der/die andere steht auf.' }),
+    r({ title: 'Wunsch-Abendessen gekocht', emoji: '🍽️', cost: 160, group: 'adult',
+        description: 'Dein Lieblingsgericht wird für dich gekocht.' }),
+    r({ title: 'Ungestörte Wellness-Stunde', emoji: '🛁', cost: 200, group: 'adult',
+        description: 'Eine Stunde nur für dich – Bad, Buch oder Ruhe.' }),
+
+    // --- Für alle ---
+    r({ title: 'Familien-Kinoabend', emoji: '🍿', cost: 220, group: 'all',
+        description: 'Popcorn, Decke, Lieblingsfilm – die ganze Familie.' }),
+    r({ title: 'Ausflug am Wochenende', emoji: '🚗', cost: 300, group: 'all',
+        description: 'Ein gemeinsamer Ausflug nach Wahl.' }),
+  ];
+
+  /* =======================================================================
+     STICKER – digitale Sammel-Sticker fürs Album.
+     rarity: 'common' | 'rare' | 'legendary'
+     ======================================================================= */
+  let _sid = 0;
+  const st = (emoji, name, cost, rarity) =>
+    ({ id: 'sticker_' + (++_sid), emoji, name, cost, rarity });
+
+  CHORES.DEFAULT_STICKERS = [
+    // common
+    st('⭐', 'Stern', 15, 'common'),
+    st('🌈', 'Regenbogen', 15, 'common'),
+    st('🐶', 'Hund', 20, 'common'),
+    st('🐱', 'Katze', 20, 'common'),
+    st('🍦', 'Eis', 20, 'common'),
+    st('🎈', 'Luftballon', 15, 'common'),
+    st('🌻', 'Blume', 15, 'common'),
+    st('🦋', 'Schmetterling', 20, 'common'),
+    // rare
+    st('🦄', 'Einhorn', 45, 'rare'),
+    st('🚀', 'Rakete', 45, 'rare'),
+    st('🐉', 'Drache', 50, 'rare'),
+    st('🦖', 'Dino', 50, 'rare'),
+    st('🏰', 'Schloss', 45, 'rare'),
+    st('🐬', 'Delfin', 45, 'rare'),
+    // legendary
+    st('👑', 'Krone', 100, 'legendary'),
+    st('💎', 'Diamant', 120, 'legendary'),
+    st('🏆', 'Pokal', 110, 'legendary'),
+    st('🌟', 'Goldstern', 100, 'legendary'),
+  ];
+
 })(window.CHORES = window.CHORES || {});
