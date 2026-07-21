@@ -14,6 +14,12 @@ sich aber jederzeit anpassen.
 - **Wochenansicht** – die ganze Woche auf einen Blick (Mo–So).
 - **Monatsansicht** – Kalender mit Fortschritt pro Tag und Monats-Punktestand.
 - **Aufgaben für alle** – Kinderaufgaben (altersgerecht), Erwachsenen-Aufgaben und gemeinsame Aufgaben.
+- **Rotierende Aufgaben** 🔄 – manche Aufgaben wechseln wöchentlich reihum. Dabei
+  gilt: **Eltern-Aufgaben rotieren nur zwischen Mama & Papa, Kinder-Aufgaben nur
+  zwischen Toni & Leo** (abgeleitet aus der Gruppe). Pro Aufgabe im Editor an-/abschaltbar.
+- **Große, klare Icons** – jede Aufgabe hat ein deutliches Symbol; bei Kindern
+  zusätzlich vergrößert und mit dem persönlichen Zeichen (🦄/🚀) versehen, damit
+  auch die Kleinen sofort erkennen, was für sie ansteht. Icons per Emoji-Auswahl setzbar.
 - **Klassisch & ausgefallen** – von „Spülmaschine ausräumen" bis „Krümel-Detektiv", „Familien-DJ" und „Licht-Wächter".
 - **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
 - **Urlaub & Vertretung** – freie Tage/Wochen eintragen; die App zeigt, welche

@@ -45,16 +45,16 @@
         assignees: ['toni', 'leo'], points: 10, group: 'child',
         description: 'Alle Spielsachen zurück in die Kisten – Toni & Leo gemeinsam.' }),
     t({ title: 'Kuscheltiere ins Bett setzen', emoji: '🧸', category: 'ordnung', frequency: 'daily',
-        assignees: ['toni'], points: 5, group: 'child',
+        assignees: ['toni'], points: 5, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Die Kuscheltiere ordentlich aufs Bett setzen.' }),
     t({ title: 'Bücher ins Regal', emoji: '📚', category: 'ordnung', frequency: 'daily',
-        assignees: ['leo'], points: 5, group: 'child',
+        assignees: ['leo'], points: 5, group: 'child', rotate: true, rotationOffset: 0,
         description: 'Alle Bücher zurück ins Bücherregal stellen.' }),
     t({ title: 'Servietten verteilen', emoji: '🍽️', category: 'kueche', frequency: 'daily',
-        assignees: ['toni'], points: 5, group: 'child',
+        assignees: ['toni'], points: 5, group: 'child', rotate: true, rotationOffset: 0,
         description: 'Für jeden am Tisch eine Serviette hinlegen.' }),
     t({ title: 'Schuhe ordnen', emoji: '👟', category: 'ordnung', frequency: 'daily',
-        assignees: ['leo'], points: 5, group: 'child',
+        assignees: ['leo'], points: 5, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Alle Schuhe im Flur schön nebeneinander stellen.' }),
 
     // ===================== KINDER – wöchentlich =========================
@@ -73,10 +73,10 @@
 
     // ===================== KINDER – Spaß-Jobs (ausgefallen) =============
     t({ title: 'Krümel-Detektiv 🔍', emoji: '🔍', category: 'spass', frequency: 'daily',
-        assignees: ['leo'], points: 8, group: 'child', fun: true,
+        assignees: ['leo'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 0,
         description: 'Finde alle Krümel unter dem Esstisch und melde sie!' }),
     t({ title: 'Licht-Wächter', emoji: '💡', category: 'spass', frequency: 'daily',
-        assignees: ['toni'], points: 8, group: 'child', fun: true,
+        assignees: ['toni'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 1,
         description: 'Alle Lichter ausschalten, die niemand braucht – Energie sparen!' }),
     t({ title: 'Kissen-Aufschüttler', emoji: '🛋️', category: 'spass', frequency: 'weekly',
         days: [0], assignees: ['toni', 'leo'], points: 10, group: 'child', fun: true,
@@ -93,10 +93,10 @@
 
     // ===================== ERWACHSENE – täglich =========================
     t({ title: 'Spülmaschine ausräumen', emoji: '🍽️', category: 'kueche', frequency: 'daily',
-        assignees: ['papa'], points: 12, group: 'adult',
+        assignees: ['papa'], points: 12, group: 'adult', rotate: true, rotationOffset: 0,
         description: 'Sauberes Geschirr ausräumen und einräumen.' }),
     t({ title: 'Spülmaschine einräumen & starten', emoji: '🫧', category: 'kueche', frequency: 'daily',
-        assignees: ['mama'], points: 12, group: 'adult',
+        assignees: ['mama'], points: 12, group: 'adult', rotate: true, rotationOffset: 1,
         description: 'Schmutziges Geschirr einräumen und abends starten.' }),
     t({ title: 'Küche wischen & Tisch abwischen', emoji: '🧽', category: 'kueche', frequency: 'daily',
         assignees: ['mama', 'papa'], points: 12, group: 'adult',
@@ -107,13 +107,13 @@
 
     // ===================== ERWACHSENE – wöchentlich =====================
     t({ title: 'Müll & Gelber Sack rausbringen', emoji: '🗑️', category: 'draussen', frequency: 'weekly',
-        days: [2], assignees: ['papa'], points: 12, group: 'adult',
+        days: [2], assignees: ['papa'], points: 12, group: 'adult', rotate: true, rotationOffset: 0,
         description: 'Mülltonnen und Gelben Sack an die Straße stellen.' }),
     t({ title: 'Staubsaugen (ganze Wohnung)', emoji: '🧹', category: 'wohnen', frequency: 'weekly',
-        days: [6], assignees: ['papa'], points: 18, group: 'adult',
+        days: [6], assignees: ['papa'], points: 18, group: 'adult', rotate: true, rotationOffset: 1,
         description: 'Alle Räume durchsaugen.' }),
     t({ title: 'Bad putzen', emoji: '🚿', category: 'wohnen', frequency: 'weekly',
-        days: [6], assignees: ['mama'], points: 18, group: 'adult',
+        days: [6], assignees: ['mama'], points: 18, group: 'adult', rotate: true, rotationOffset: 0,
         description: 'Waschbecken, WC, Dusche und Spiegel reinigen.' }),
     t({ title: 'Wäsche waschen & aufhängen', emoji: '🧺', category: 'baby', frequency: 'weekly',
         days: [1, 4], assignees: ['mama', 'papa'], points: 15, group: 'adult',

@@ -65,7 +65,7 @@
     // Nach Mitglied gruppieren – jede Person bekommt ihre Spalte
     const lanes = el('<div class="lanes"></div>');
     S.members().forEach(m => {
-      const mine = insts.filter(i => i.task.assignees.includes(m.id) || i.doneBy.includes(m.id));
+      const mine = insts.filter(i => i.assignees.includes(m.id) || i.doneBy.includes(m.id) || i.coverBy.includes(m.id));
       const laneDone = mine.filter(i => i.done).length;
       const lane = el(`<div class="lane" style="--c:${m.color}">
         <div class="lane-head">
@@ -89,18 +89,22 @@
   function taskCard(i, ctx) {
     const t = i.task;
     const cat = CAT[t.category] || { color: '#999', emoji: '•', label: '' };
-    const shared = t.assignees.length > 1;
-    const card = el(`<div class="task ${i.done ? 'done' : ''} ${i.needsCover ? 'cover' : ''}" style="--cat:${cat.color}">
+    const shared = i.assignees.length > 1;
+    const isKid = i.assignees.some(id => (S.member(id) || {}).kind === 'child');
+    const owner = S.member(i.assignees[0]);
+    const card = el(`<div class="task ${i.done ? 'done' : ''} ${i.needsCover ? 'cover' : ''} ${isKid ? 'kidtask' : ''}" style="--cat:${cat.color}${owner ? ';--own:' + owner.color : ''}">
       <button class="check" title="Erledigt">${i.done ? '✔' : ''}</button>
+      <div class="task-icon">${t.emoji}${owner && !shared ? `<span class="owner-badge" title="${esc(owner.name)}">${owner.emoji}</span>` : ''}</div>
       <div class="task-body">
-        <div class="task-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${t.emoji} ${esc(t.title)}</div>
+        <div class="task-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${i.rotates ? '<span class="rottag" title="Wechselaufgabe – rotiert wöchentlich">🔄</span>' : ''}${esc(t.title)}</div>
         <div class="task-meta">
           <span class="cat" style="--c:${cat.color}">${cat.emoji} ${cat.label}</span>
           ${shared ? '<span class="cat shared">👥 gemeinsam</span>' : ''}
           <span class="pts">+${t.points}</span>
         </div>
         ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
-        <div class="task-people">${t.assignees.map(id => memberChip(id)).join('')}
+        <div class="task-people">${i.assignees.map(id => memberChip(id)).join('')}
+          ${i.rotates ? '<span class="chip rot" style="--c:var(--accent)">🔄 diese Woche</span>' : ''}
           ${i.coverBy.map(id => `<span class="chip cover" style="--c:${S.member(id) ? S.member(id).color : '#999'}">🤝 ${esc(S.member(id) ? S.member(id).short : '')}</span>`).join('')}
         </div>
         ${i.needsCover ? `<div class="cover-note">🏖️ ${i.onVacation.map(id => esc(S.member(id).short)).join(', ')} im Urlaub – Vertretung nötig <button class="btn tiny cover-btn">Übernehmen</button></div>` : ''}
@@ -164,10 +168,10 @@
       if (!insts.length) list.appendChild(el('<div class="empty small">–</div>'));
       insts.forEach(i => {
         const cat = CAT[i.task.category] || { color: '#999' };
-        const pill = el(`<button class="wpill ${i.done ? 'done' : ''}" style="--cat:${cat.color}" title="${esc(i.task.title)}">
+        const pill = el(`<button class="wpill ${i.done ? 'done' : ''}" style="--cat:${cat.color}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}">
           <span class="wpill-emoji">${i.task.emoji}</span>
           <span class="wpill-title">${esc(i.task.title)}</span>
-          <span class="wpill-who">${i.task.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
+          <span class="wpill-who">${i.rotates ? '🔄' : ''}${i.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
         </button>`);
         pill.addEventListener('click', () => { S.toggleDone(i.task.id, iso); ctx.render(); });
         list.appendChild(pill);
@@ -453,7 +457,7 @@
   // Dialog: Vertretung für eine Aufgabe wählen
   UI.coverDialog = function (i, ctx) {
     const available = S.members().filter(m =>
-      !i.task.assignees.includes(m.id) && !S.isOnVacation(m.id, i.date));
+      !i.assignees.includes(m.id) && !S.isOnVacation(m.id, i.date));
     const pool = available.length ? available : S.members().filter(m => !S.isOnVacation(m.id, i.date));
     UI.modal(`Wer übernimmt „${esc(i.task.title)}“?`, `
       <div class="pickers">${pool.map(m =>
@@ -487,11 +491,14 @@
         const cat = CAT[t.category] || {};
         const freq = t.frequency === 'daily' ? (t.days ? 'an bestimmten Tagen' : 'täglich')
           : t.frequency === 'weekly' ? 'wöchentlich' : 'monatlich';
+        const who = t.rotate
+          ? '🔄 rotiert: ' + S.rotationPool(t).map(id => (S.member(id) || {}).short).join(' ↔ ')
+          : t.assignees.map(id => (S.member(id) || {}).short).join(', ');
         const row = el(`<div class="manage-row" style="--cat:${cat.color || '#999'}">
           <span class="mr-emoji">${t.emoji}</span>
           <div class="mr-main">
-            <div class="mr-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${esc(t.title)}</div>
-            <div class="subtle small">${freq} · +${t.points} · ${t.assignees.map(id => (S.member(id) || {}).short).join(', ')}</div>
+            <div class="mr-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${t.rotate ? '<span class="rottag">🔄</span>' : ''}${esc(t.title)}</div>
+            <div class="subtle small">${freq} · +${t.points} · ${who}</div>
           </div>
           <button class="btn tiny mr-edit">Bearbeiten</button>
           <button class="btn tiny danger mr-del">✕</button>
@@ -507,23 +514,31 @@
     root.appendChild(wrap);
   };
 
+  // Emoji-Auswahl für Aufgaben-Icons (damit Kinder sie leicht erkennen)
+  const EMOJI_PALETTE = ['🧸','📚','🧹','🧽','🪣','🚿','🛁','🚽','🧺','🧦','👕','👟',
+    '🛏️','🍽️','🍴','🥄','🧊','🍳','🥗','🛒','🗑️','♻️','🪴','🌻','🐟','🐶','🐱','📬',
+    '🚗','🪟','💡','🔌','📝','📅','🎵','🎬','🍦','🎨','✏️','🧩','⚽','🪥','🌙','⭐','🎉','🔍'];
+
   UI.taskDialog = function (task, ctx) {
     const isNew = !task;
     task = task || { title: '', emoji: '⭐', category: 'ordnung', frequency: 'daily',
-      days: null, dayOfMonth: 1, assignees: [], points: 10, group: 'family', description: '', fun: false };
+      days: null, dayOfMonth: 1, assignees: [], points: 10, group: 'family', description: '', fun: false, rotate: false };
     const catOpts = Object.entries(CAT).map(([k, v]) =>
       `<option value="${k}" ${k === task.category ? 'selected' : ''}>${v.emoji} ${v.label}</option>`).join('');
     const dayBtns = D.WEEKDAY_SHORT.map((n, idx) =>
       `<button type="button" class="daybtn ${(task.days || []).includes(idx) ? 'on' : ''}" data-d="${idx}">${n}</button>`).join('');
+    const palette = EMOJI_PALETTE.map(e =>
+      `<button type="button" class="emoji-opt ${e === task.emoji ? 'on' : ''}" data-e="${e}">${e}</button>`).join('');
 
     UI.modal(isNew ? 'Neue Aufgabe' : 'Aufgabe bearbeiten', `
       <div class="tf">
         <label>Titel<input class="t-title" value="${esc(task.title)}" placeholder="z. B. Wäsche zusammenlegen"></label>
         <div class="tf-row">
-          <label class="tf-emoji">Emoji<input class="t-emoji" value="${esc(task.emoji)}" maxlength="4"></label>
+          <label class="tf-emoji">Icon<input class="t-emoji" value="${esc(task.emoji)}" maxlength="4"></label>
           <label>Kategorie<select class="t-cat">${catOpts}</select></label>
           <label class="tf-pts">Punkte<input type="number" class="t-points" value="${task.points}" min="1" max="100"></label>
         </div>
+        <div class="emoji-palette">${palette}</div>
         <label>Beschreibung<input class="t-desc" value="${esc(task.description || '')}" placeholder="Kurz erklären"></label>
         <div class="tf-row">
           <label>Gruppe<select class="t-group">
@@ -540,12 +555,20 @@
         </div>
         <div class="t-days-wrap">Wochentage <span class="subtle small">(bei „täglich“ leer = jeden Tag)</span><div class="daybtns">${dayBtns}</div></div>
         <div class="t-mday-wrap" style="display:none">Tag im Monat <input type="number" class="t-mday" value="${task.dayOfMonth || 1}" min="1" max="28"></div>
+        <label class="t-rotwrap"><input type="checkbox" class="t-rotate" ${task.rotate ? 'checked' : ''}> 🔄 Wöchentlich rotieren (reihum abwechseln)</label>
+        <div class="t-rothint subtle small"></div>
         <div class="t-people">Zuständig (mehrere möglich = gemeinsam)
           <div class="pickers">${S.members().map(m =>
             `<button type="button" class="picker ${task.assignees.includes(m.id) ? 'on' : ''}" data-id="${m.id}" style="--c:${m.color}">${m.emoji} ${esc(m.short)}</button>`).join('')}</div>
         </div>
       </div>`,
       (box, close) => {
+        // Emoji-Palette
+        box.querySelectorAll('.emoji-opt').forEach(b => b.addEventListener('click', () => {
+          box.querySelector('.t-emoji').value = b.dataset.e;
+          box.querySelectorAll('.emoji-opt').forEach(x => x.classList.remove('on'));
+          b.classList.add('on');
+        }));
         const days = new Set(task.days || []);
         box.querySelectorAll('.daybtn').forEach(b => b.addEventListener('click', () => {
           const d = Number(b.dataset.d);
@@ -565,22 +588,44 @@
         };
         freqSel.addEventListener('change', syncFreq); syncFreq();
 
+        // Rotations-Hinweis: zeigt, zwischen wem gewechselt wird (aus Gruppe abgeleitet)
+        const rotChk = box.querySelector('.t-rotate');
+        const grpSel = box.querySelector('.t-group');
+        const peopleWrap = box.querySelector('.t-people');
+        const syncRot = () => {
+          const on = rotChk.checked;
+          const pool = S.rotationPool({ group: grpSel.value });
+          const names = pool.map(id => { const m = S.member(id); return m ? m.emoji + ' ' + m.short : ''; }).join(' ↔ ');
+          box.querySelector('.t-rothint').textContent = on
+            ? `Wechselt wöchentlich reihum zwischen: ${names}`
+            : '';
+          peopleWrap.style.display = on ? 'none' : '';
+        };
+        rotChk.addEventListener('change', syncRot);
+        grpSel.addEventListener('change', syncRot);
+        syncRot();
+
         box.querySelector('.modal-save').addEventListener('click', () => {
           const title = box.querySelector('.t-title').value.trim();
           if (!title) { box.querySelector('.t-title').focus(); return; }
           const freq = freqSel.value;
+          const rotate = rotChk.checked;
           const patch = {
             title, emoji: box.querySelector('.t-emoji').value.trim() || '⭐',
             category: box.querySelector('.t-cat').value,
             description: box.querySelector('.t-desc').value.trim(),
-            group: box.querySelector('.t-group').value,
+            group: grpSel.value,
             frequency: freq,
             points: Math.max(1, Number(box.querySelector('.t-points').value) || 10),
             fun: box.querySelector('.t-fun').checked,
+            rotate,
+            rotationOffset: task.rotationOffset || 0,
             assignees: Array.from(assignees),
             days: freq === 'monthly' ? null : Array.from(days).sort(),
             dayOfMonth: freq === 'monthly' ? Number(box.querySelector('.t-mday').value) || 1 : (task.dayOfMonth || 1),
           };
+          // Bei Rotation ohne feste Auswahl: Pool aus der Gruppe verwenden
+          if (rotate && !patch.assignees.length) patch.assignees = [S.rotationPool(patch)[0]];
           if (!patch.assignees.length) patch.assignees = S.members().map(m => m.id);
           if (isNew) S.addTask(patch); else S.updateTask(task.id, patch);
           close(); ctx.render();

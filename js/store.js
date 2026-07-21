@@ -36,6 +36,12 @@
       const start = D.startOfWeek(iso);
       return Array.from({ length: 7 }, (_, i) => D.addDays(start, i));
     },
+    // Fortlaufende Wochennummer ab einem festen Montag (für die Rotation).
+    weekIndex(iso) {
+      const anchor = new Date(2024, 0, 1); // Montag, 1.1.2024
+      const start = D.parse(D.startOfWeek(iso));
+      return Math.round((start - anchor) / (7 * 24 * 3600 * 1000));
+    },
     weekdayIndex(iso) { return D.parse(iso).getDay(); }, // 0=So..6=Sa
     dayOfMonth(iso) { return D.parse(iso).getDate(); },
     monthKey(iso) { return iso.slice(0, 7); },
@@ -140,6 +146,27 @@
       return false;
     },
 
+    // Rotations-Pool einer Aufgabe: Eltern-Aufgaben rotieren nur unter
+    // Erwachsenen, Kinder-Aufgaben nur unter Kindern.
+    rotationPool(task) {
+      if (task.rotationPool && task.rotationPool.length) {
+        return task.rotationPool.filter(id => S.member(id));
+      }
+      const kind = task.group === 'adult' ? 'adult' : task.group === 'child' ? 'child' : null;
+      if (kind) return state.members.filter(m => m.kind === kind).map(m => m.id);
+      return state.members.map(m => m.id); // Familie: alle
+    },
+
+    // Tatsächlich zuständige Person(en) an einem Datum – bei rotierenden
+    // Aufgaben wechselt das wöchentlich reihum durch den Pool.
+    assigneesFor(task, iso) {
+      if (!task.rotate) return task.assignees;
+      const pool = S.rotationPool(task);
+      if (!pool.length) return task.assignees;
+      const i = (D.weekIndex(iso) + (task.rotationOffset || 0)) % pool.length;
+      return [pool[(i + pool.length) % pool.length]];
+    },
+
     // Alle Aufgaben-Instanzen für einen Tag (angereichert mit Status)
     instancesFor(iso) {
       return state.tasks
@@ -152,12 +179,16 @@
     instance(task, iso) {
       const key = S.key(task.id, iso);
       const c = state.completions[key];
+      // Effektiv zuständig an diesem Tag (berücksichtigt Rotation)
+      const assignees = S.assigneesFor(task, iso);
       // Wer ist wegen Urlaub verhindert?
-      const onVacation = task.assignees.filter(id => S.isOnVacation(id, iso));
+      const onVacation = assignees.filter(id => S.isOnVacation(id, iso));
       const covered = c && c.coverBy ? c.coverBy : [];
       return {
         key,
         task,
+        assignees,                 // effektiv zuständige Person(en) heute
+        rotates: !!task.rotate,
         date: iso,
         done: !!(c && c.done),
         doneBy: (c && c.doneBy) || [],
@@ -178,13 +209,14 @@
       if (existing && existing.done) {
         delete state.completions[key];
       } else {
-        // Wer erledigt? Standard = Zuständige (ohne Urlauber), plus evtl. Vertretung
-        const doers = task.assignees.filter(id => !S.isOnVacation(id, iso));
+        // Wer erledigt? Effektiv Zuständige (Rotation, ohne Urlauber) + Vertretung
+        const assignees = S.assigneesFor(task, iso);
+        const doers = assignees.filter(id => !S.isOnVacation(id, iso));
         const cover = existing && existing.coverBy ? existing.coverBy : [];
         const allDoers = Array.from(new Set([...doers, ...cover]));
         state.completions[key] = {
           taskId, date: iso, done: true,
-          doneBy: allDoers.length ? allDoers : task.assignees.slice(),
+          doneBy: allDoers.length ? allDoers : assignees.slice(),
           doneAt: new Date().toISOString(),
           coverBy: cover,
           rater: S.pickRandomRater(allDoers),
