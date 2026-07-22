@@ -147,6 +147,7 @@
         <div class="kid-dots">${insts.map(i =>
           `<span class="kid-dot ${i.done ? 'on' : ''} ${i.pending ? 'wait' : ''}">${i.done ? '⭐' : (i.pending ? '⏳' : '')}</span>`).join('')}</div>
         <div class="kid-progress-text">${allDone ? 'Alles geschafft! 🎉' : (total === 0 ? 'Heute frei! 🎈' : 'Tipp auf einen Job!')}</div>
+        <button class="kid-ask">🔊 Was muss ich heute machen?</button>
       </div>
 
       <div class="kid-columns kid-columns-3">
@@ -167,6 +168,7 @@
 
     scr.querySelector('.kid-home').addEventListener('click', () => CHORES.kid.close());
     scr.querySelector('.kid-switch').addEventListener('click', () => renderPicker());
+    scr.querySelector('.kid-ask').addEventListener('click', () => announce(m, todo, checking, done));
 
     const todoBody = scr.querySelector('.todo-body');
     const checkBody = scr.querySelector('.checking-body');
@@ -254,6 +256,47 @@
     overlay.appendChild(focus);
     // Aufgabe (und ggf. den Grund) direkt vorlesen
     setTimeout(() => speak(t.title + (i.rejected && i.rejection && i.rejection.reason ? '. Nochmal: ' + i.rejection.reason : '')), 350);
+  }
+
+  /* -------------- „Was muss ich heute machen?" – vorlesen ------------- */
+
+  // Baut den gesprochenen Satz aus den offenen Aufgaben.
+  function announceText(m, todo) {
+    if (!todo.length) return `Hallo ${m.short}! Du hast heute schon alles geschafft. Super gemacht!`;
+    const titles = todo.map(i => i.task.title);
+    let list;
+    if (titles.length === 1) list = titles[0];
+    else list = titles.slice(0, -1).join(', ') + ' und ' + titles[titles.length - 1];
+    const wort = titles.length === 1 ? 'eine Aufgabe' : titles.length + ' Aufgaben';
+    return `Hallo ${m.short}! Heute hast du ${wort}: ${list}.`;
+  }
+
+  // Zeigt die Antwort als Sprechblase (Text + große Icons) UND liest sie vor.
+  function announce(m, todo, checking, done) {
+    const text = announceText(m, todo);
+    const bubble = el(`<div class="kid-ask-overlay">
+      <div class="kid-ask-card" style="--c:${m.color}">
+        <button class="kid-ask-close" title="schließen">✕</button>
+        <div class="kid-ask-avatar">${m.emoji}</div>
+        <div class="kid-ask-title">${todo.length
+          ? `Das ist heute dran, ${esc(m.short)}:`
+          : `Alles geschafft, ${esc(m.short)}! 🎉`}</div>
+        <div class="kid-ask-list">${todo.map(i => `
+          <div class="kid-ask-item">
+            <span class="kid-ask-emoji">${i.task.emoji}</span>
+            <span class="kid-ask-name">${esc(i.task.title)}</span>
+            ${i.rejected ? '<span class="kid-ask-again" title="nochmal">🔁</span>' : ''}
+          </div>`).join('') || '<div class="kid-ask-none">Du hast heute frei 🎈</div>'}</div>
+        ${checking && checking.length ? `<div class="kid-ask-hint">👀 ${checking.length} ${checking.length === 1 ? 'Aufgabe wird' : 'Aufgaben werden'} noch geprüft.</div>` : ''}
+        <button class="kid-ask-repeat">🔊 Nochmal vorlesen</button>
+      </div>
+    </div>`);
+    const close = () => { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} bubble.remove(); };
+    bubble.querySelector('.kid-ask-close').addEventListener('click', close);
+    bubble.addEventListener('click', (e) => { if (e.target === bubble) close(); });
+    bubble.querySelector('.kid-ask-repeat').addEventListener('click', () => speak(text));
+    overlay.appendChild(bubble);
+    speak(text);
   }
 
   /* --------------------------- Alles-geschafft-Feier ----------------- */
