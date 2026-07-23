@@ -49,7 +49,12 @@
       if (badge) badge.remove();
       if (b.dataset.view === 'ratings') {
         const n = CHORES.store.pendingRatings().length;
-        if (n) { const s = document.createElement('span'); s.className = 'navbadge'; s.textContent = n; b.appendChild(s); }
+        if (n) {
+          const s = document.createElement('span');
+          // rot & pulsierend, wenn etwas schon über 24 h auf Abnahme wartet
+          s.className = 'navbadge' + (CHORES.store.overduePending().length ? ' urgent' : '');
+          s.textContent = n; b.appendChild(s);
+        }
       }
     });
     (UI[app.view] || UI.today)(rootMain, ctx);

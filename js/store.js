@@ -75,7 +75,7 @@
       },
       // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
       purchases: [],
-      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true }, // frische Installation: alles aktuell
+      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -120,6 +120,49 @@
           if (!have.has(t.title)) state.tasks.push(JSON.parse(JSON.stringify(t)));
         });
         state.migrations.kidTasksV1 = true;
+        S.save();
+      }
+      if (!state.migrations.rebalanceV1) {
+        // Umbau auf das 4–6-Karten-Schema (je Kind, pro Tag):
+        // fester Tagesrahmen + genau ein Tages-Special.
+        const byTitle = {};
+        state.tasks.forEach(t => { byTitle[t.title] = t; });
+
+        // 1. Ruhende Aufgaben: bleiben (samt Punkten/Historie) erhalten,
+        //    stehen aber ohne Wochentage nicht mehr im Plan. Im Reiter
+        //    „Aufgaben" jederzeit reaktivierbar.
+        ['Kuscheltiere ins Bett setzen', 'Bücher ins Regal', 'Servietten verteilen',
+         'Schuhe ordnen', 'Wäsche in den Korb werfen', 'Wetter-Reporter',
+         'Kissen-Aufschüttler', 'Pflanzen-Doktor',
+         'Zähne putzen', 'Selbst anziehen', 'Schlafanzug-Zeit'].forEach(title => {
+          const t = byTitle[title];
+          if (t) { t.frequency = 'weekly'; t.days = []; }
+        });
+
+        // 2. Neue Rhythmen: Specials auf feste Tage, rotierend je Kind
+        const edits = {
+          'Blumen gießen':                  { frequency: 'weekly', days: [4], rotate: true, rotationOffset: 0 },
+          'Post aus dem Briefkasten holen': { frequency: 'weekly', days: [3], rotate: true, rotationOffset: 1 },
+          'Krümel-Detektiv 🔍':             { frequency: 'weekly', days: [4], rotate: true, rotationOffset: 1 },
+          'Licht-Wächter':                  { frequency: 'weekly', days: [5], rotate: true, rotationOffset: 1 },
+          'Familien-DJ 🎵':                 { rotate: true, rotationOffset: 0 },
+          'Socken-Detektiv':                { days: [1] },
+          'Besteck-Sortierer':              { days: [1], rotationOffset: 1 },
+          'Hausschuh-Bote':                 { days: [0], rotationOffset: 0 },
+          'Tisch decken':                   { rotate: true, rotationOffset: 0, rotationPool: ['toni', 'leo'] },
+          'Tisch abräumen':                 { rotate: true, rotationOffset: 1, rotationPool: ['toni', 'leo'] },
+        };
+        Object.keys(edits).forEach(title => {
+          const t = byTitle[title];
+          if (t) Object.assign(t, edits[title]);
+        });
+
+        // 3. Neue Aufgaben (Morgen-/Abend-Held, Eltern-Kreisläufe) ergänzen
+        (CHORES.TASKS_UPDATE_2 || []).forEach(t => {
+          if (!byTitle[t.title]) state.tasks.push(JSON.parse(JSON.stringify(t)));
+        });
+
+        state.migrations.rebalanceV1 = true;
         S.save();
       }
       if (!state.migrations.workflowV1) {
@@ -361,6 +404,36 @@
     },
     // Alias für bestehenden Code
     pendingRatings() { return S.pendingApprovals(); },
+
+    // Abnahme-Stau: wartet schon länger als `hours` Stunden auf Abnahme
+    overduePending(hours = 24) {
+      const cut = Date.now() - hours * 3600 * 1000;
+      return S.pendingApprovals().filter(x =>
+        x.c.doneAt && new Date(x.c.doneAt).getTime() < cut);
+    },
+
+    // Wochen-Bilanz bis einschließlich `iso`: Quote + liegen Gebliebenes
+    weekReview(iso) {
+      const today = D.today();
+      const days = D.weekDays(iso).filter(d => d <= iso);
+      let total = 0, done = 0, pending = 0;
+      const missed = {};
+      days.forEach(d => S.instancesFor(d).forEach(i => {
+        total++;
+        if (i.done) done++;
+        else if (i.pending) pending++;
+        else if (d < today) { // vergangene Tage: wirklich liegen geblieben
+          const m = missed[i.task.id] || (missed[i.task.id] = { task: i.task, n: 0 });
+          m.n++;
+        }
+      }));
+      return {
+        total, done, pending,
+        pct: total ? Math.round(done / total * 100) : 0,
+        laggards: Object.values(missed).filter(x => x.n >= 2)
+          .sort((a, b) => b.n - a.n).slice(0, 4),
+      };
+    },
 
     recentRatings(limit = 20) {
       return Object.values(state.completions)

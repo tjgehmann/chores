@@ -40,57 +40,37 @@
   let _id = 0;
   const t = (o) => Object.assign({ id: 'task_' + (++_id) }, o);
 
+  // Ziel-Rhythmus: je Kind 4–6 Karten pro Tag – feste Tagesstruktur
+  // (Morgen-/Abend-Held, Spielzeug, Kita, ein Tisch-Job) plus genau EIN
+  // „Tages-Special" (kleine Aufgabe oder Spaß-Job), das wöchentlich
+  // zwischen den Kindern rotiert.
   CHORES.DEFAULT_TASKS = [
     // ===================== KINDER – täglich ============================
     t({ title: 'Spielzeug aufräumen', emoji: '🧩', category: 'ordnung', frequency: 'daily',
         assignees: ['toni', 'leo'], points: 10, group: 'child',
         description: 'Alle Spielsachen zurück in die Kisten – Toni & Leo gemeinsam.' }),
-    t({ title: 'Kuscheltiere ins Bett setzen', emoji: '🧸', category: 'ordnung', frequency: 'daily',
-        assignees: ['toni'], points: 5, group: 'child', rotate: true, rotationOffset: 1,
-        description: 'Die Kuscheltiere ordentlich aufs Bett setzen.' }),
-    t({ title: 'Bücher ins Regal', emoji: '📚', category: 'ordnung', frequency: 'daily',
-        assignees: ['leo'], points: 5, group: 'child', rotate: true, rotationOffset: 0,
-        description: 'Alle Bücher zurück ins Bücherregal stellen.' }),
-    t({ title: 'Servietten verteilen', emoji: '🍽️', category: 'kueche', frequency: 'daily',
-        assignees: ['toni'], points: 5, group: 'child', rotate: true, rotationOffset: 0,
-        description: 'Für jeden am Tisch eine Serviette hinlegen.' }),
-    t({ title: 'Schuhe ordnen', emoji: '👟', category: 'ordnung', frequency: 'daily',
-        assignees: ['leo'], points: 5, group: 'child', rotate: true, rotationOffset: 1,
-        description: 'Alle Schuhe im Flur schön nebeneinander stellen.' }),
 
-    // ===================== KINDER – wöchentlich =========================
+    // ===================== KINDER – Tages-Specials ======================
     t({ title: 'Eigenes Zimmer aufräumen', emoji: '🛏️', category: 'ordnung', frequency: 'weekly',
         days: [6], assignees: ['toni', 'leo'], points: 20, group: 'child',
         description: 'Am Samstag das Kinderzimmer gemeinsam auf Vordermann bringen.' }),
     t({ title: 'Blumen gießen', emoji: '🪴', category: 'tiere', frequency: 'weekly',
-        days: [1, 4], assignees: ['toni'], points: 10, group: 'child',
+        days: [4], assignees: ['toni'], points: 10, group: 'child', rotate: true, rotationOffset: 0,
         description: 'Die Zimmerpflanzen mit der kleinen Gießkanne gießen.' }),
     t({ title: 'Post aus dem Briefkasten holen', emoji: '📬', category: 'draussen', frequency: 'weekly',
-        days: [1, 2, 3, 4, 5], assignees: ['leo'], points: 8, group: 'child',
+        days: [3], assignees: ['leo'], points: 8, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Nachschauen, ob Post da ist, und sie hereinbringen.' }),
-    t({ title: 'Wäsche in den Korb werfen', emoji: '🧺', category: 'baby', frequency: 'weekly',
-        days: [3], assignees: ['toni', 'leo'], points: 10, group: 'child',
-        description: 'Alle schmutzigen Sachen aus dem Zimmer in den Wäschekorb.' }),
 
-    // ===================== KINDER – Spaß-Jobs (ausgefallen) =============
-    t({ title: 'Krümel-Detektiv 🔍', emoji: '🔍', category: 'spass', frequency: 'daily',
-        assignees: ['leo'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 0,
+    // ===================== KINDER – Spaß-Jobs (je einer pro Tag) ========
+    t({ title: 'Krümel-Detektiv 🔍', emoji: '🔍', category: 'spass', frequency: 'weekly',
+        days: [4], assignees: ['leo'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 1,
         description: 'Finde alle Krümel unter dem Esstisch und melde sie!' }),
-    t({ title: 'Licht-Wächter', emoji: '💡', category: 'spass', frequency: 'daily',
-        assignees: ['toni'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 1,
+    t({ title: 'Licht-Wächter', emoji: '💡', category: 'spass', frequency: 'weekly',
+        days: [5], assignees: ['toni'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 1,
         description: 'Alle Lichter ausschalten, die niemand braucht – Energie sparen!' }),
-    t({ title: 'Kissen-Aufschüttler', emoji: '🛋️', category: 'spass', frequency: 'weekly',
-        days: [0], assignees: ['toni', 'leo'], points: 10, group: 'child', fun: true,
-        description: 'Alle Sofakissen kräftig aufschütteln, bis sie kuschelig aussehen.' }),
-    t({ title: 'Wetter-Reporter', emoji: '🌤️', category: 'spass', frequency: 'daily',
-        assignees: ['leo'], points: 8, group: 'child', fun: true,
-        description: 'Aus dem Fenster schauen und der Familie das Wetter ansagen.' }),
     t({ title: 'Familien-DJ 🎵', emoji: '🎵', category: 'spass', frequency: 'weekly',
-        days: [5], assignees: ['toni'], points: 10, group: 'child', fun: true,
+        days: [5], assignees: ['toni'], points: 10, group: 'child', fun: true, rotate: true, rotationOffset: 0,
         description: 'Ein Lied für den Familienabend aussuchen und abspielen.' }),
-    t({ title: 'Pflanzen-Doktor', emoji: '🩺', category: 'spass', frequency: 'weekly',
-        days: [2], assignees: ['toni'], points: 8, group: 'child', fun: true,
-        description: 'Welke Blätter vorsichtig abzupfen – Dr. Toni untersucht die Pflanzen.' }),
 
     // ===================== ERWACHSENE – täglich =========================
     t({ title: 'Spülmaschine ausräumen', emoji: '🥣', category: 'kueche', frequency: 'daily',
@@ -147,49 +127,40 @@
         description: 'Kaputtes Spielzeug aussortieren und Kleidung durchsehen – gemeinsam.' }),
 
     // ===================== FAMILIE – gemeinsam ==========================
+    // Tisch-Jobs rotieren wöchentlich zwischen den Kindern: jedes Kind hat
+    // jeden Tag genau EINEN Tisch-Job (decken oder abräumen).
     t({ title: 'Tisch decken', emoji: '🍴', category: 'kueche', frequency: 'daily',
         assignees: ['toni', 'leo'], points: 8, group: 'family',
-        description: 'Teller, Besteck und Gläser gemeinsam auf den Tisch stellen.' }),
+        rotate: true, rotationOffset: 0, rotationPool: ['toni', 'leo'],
+        description: 'Teller, Besteck und Gläser auf den Tisch stellen.' }),
     t({ title: 'Tisch abräumen', emoji: '🧾', category: 'kueche', frequency: 'daily',
         assignees: ['toni', 'leo', 'mama'], points: 8, group: 'family',
-        description: 'Nach dem Essen gemeinsam den Tisch abräumen.' }),
+        rotate: true, rotationOffset: 1, rotationPool: ['toni', 'leo'],
+        description: 'Nach dem Essen den Tisch abräumen – Mama oder Papa helfen beim Tragen.' }),
     t({ title: 'Großer Familien-Aufräum-Sprint', emoji: '⏱️', category: 'spass', frequency: 'weekly',
         days: [0], assignees: ['mama', 'papa', 'toni', 'leo'], points: 25, group: 'family', fun: true,
         description: '10-Minuten-Sprint: Alle räumen gemeinsam so viel auf wie möglich!' }),
   ];
 
   /* =======================================================================
-     NACHTRAG (Juli 2026) – weitere entwicklungsgerechte Kinder-Aufgaben
-     und die neue Kategorie „Ich selbst" (Morgen-/Abend-Routinen).
-     WICHTIG: Diese Liste muss NACH den Aufgaben oben stehen, damit die
-     fortlaufenden IDs stabil bleiben – bestehende Speicherstände bekommen
-     sie über eine Migration (store.js) dazu.
+     NACHTRAG 1 (Juli 2026) – weitere entwicklungsgerechte Kinder-Aufgaben.
+     Bestehende Speicherstände bekommen diese Listen über Migrationen
+     (store.js) dazu; Neuinstallationen über das concat unten.
      ======================================================================= */
   CHORES.TASKS_UPDATE_1 = [
-    // --- Ich selbst: Routinen, die Vierjährige stolz machen -------------
-    t({ title: 'Zähne putzen', emoji: '🪥', category: 'selbst', frequency: 'daily',
-        assignees: ['toni', 'leo'], points: 5, group: 'child',
-        description: 'Morgens und abends Zähne putzen – blitzeblank wie ein Profi!' }),
-    t({ title: 'Selbst anziehen', emoji: '👖', category: 'selbst', frequency: 'daily',
-        assignees: ['toni', 'leo'], points: 5, group: 'child',
-        description: 'Morgens ganz alleine anziehen – du schaffst das!' }),
-    t({ title: 'Schlafanzug-Zeit', emoji: '🌙', category: 'selbst', frequency: 'daily',
-        assignees: ['toni', 'leo'], points: 5, group: 'child',
-        description: 'Abends Schlafanzug anziehen und die Kleider weglegen.' }),
-
     // --- Sortieren, Zuordnen, echte kleine Verantwortungen --------------
     t({ title: 'Socken-Detektiv', emoji: '🧦', category: 'baby', frequency: 'weekly',
-        days: [1, 4], assignees: ['toni'], points: 10, group: 'child', rotate: true, rotationOffset: 0,
+        days: [1], assignees: ['toni'], points: 10, group: 'child', rotate: true, rotationOffset: 0,
         description: 'Finde alle Sockenpaare aus der frischen Wäsche und lege sie zusammen!' }),
     t({ title: 'Handtuch-Falter', emoji: '🛀', category: 'baby', frequency: 'weekly',
         days: [2], assignees: ['leo'], points: 8, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Die kleinen Handtücher schön zusammenlegen und stapeln.' }),
     t({ title: 'Besteck-Sortierer', emoji: '🥄', category: 'kueche', frequency: 'weekly',
-        days: [1, 3, 5], assignees: ['toni'], points: 8, group: 'child', rotate: true, rotationOffset: 0,
+        days: [1], assignees: ['leo'], points: 8, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Löffel und Gabeln aus der Spülmaschine ins richtige Fach sortieren – ohne Messer!' }),
     t({ title: 'Kita-Auspacker', emoji: '🎒', category: 'ordnung', frequency: 'daily',
         days: [1, 2, 3, 4, 5], assignees: ['toni', 'leo'], points: 8, group: 'child',
-        description: 'Nach der Kita: Brotdose und Flasche in die Küche bringen, Jacke aufhängen.' }),
+        description: 'Nach der Kita: Brotdose und Flasche in die Küche bringen, Jacke und Schuhe an ihren Platz.' }),
     t({ title: 'Back- und Kochhelfer', emoji: '🥕', category: 'kueche', frequency: 'weekly',
         days: [6], assignees: ['leo'], points: 12, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Beim Kochen oder Backen helfen: Gemüse waschen, rühren, abmessen.' }),
@@ -199,13 +170,34 @@
 
     // --- Neue Spaß-Jobs -------------------------------------------------
     t({ title: 'Hausschuh-Bote', emoji: '🥿', category: 'spass', frequency: 'weekly',
-        days: [0, 3], assignees: ['leo'], points: 6, group: 'child', fun: true, rotate: true, rotationOffset: 1,
+        days: [0], assignees: ['leo'], points: 6, group: 'child', fun: true, rotate: true, rotationOffset: 0,
         description: 'Bring allen in der Familie ihre Hausschuhe – Express-Lieferung!' }),
     t({ title: 'Spielzeug-Tierarzt', emoji: '🩹', category: 'spass', frequency: 'weekly',
         days: [3], assignees: ['toni'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 0,
         description: 'Untersuche dein Spielzeug: Ist etwas kaputt? Melde es in der Spielzeug-Klinik!' }),
   ];
-  CHORES.DEFAULT_TASKS = CHORES.DEFAULT_TASKS.concat(CHORES.TASKS_UPDATE_1);
+
+  /* =======================================================================
+     NACHTRAG 2 – Tages-Rahmen für die Kinder (Morgen-/Abend-Held statt
+     drei einzelner Routinen) und tägliche Eltern-Kreisläufe.
+     ======================================================================= */
+  CHORES.TASKS_UPDATE_2 = [
+    t({ title: 'Morgen-Held', emoji: '🌞', category: 'selbst', frequency: 'daily',
+        assignees: ['toni', 'leo'], points: 8, group: 'child',
+        description: 'Alleine anziehen und Zähne putzen – fertig für den Tag!' }),
+    t({ title: 'Abend-Held', emoji: '🌙', category: 'selbst', frequency: 'daily',
+        assignees: ['toni', 'leo'], points: 8, group: 'child',
+        description: 'Schlafanzug an, Zähne putzen und die Kleider in den Wäschekorb.' }),
+    t({ title: 'Müll-Check & runterbringen', emoji: '🚮', category: 'draussen', frequency: 'daily',
+        assignees: ['papa'], points: 8, group: 'adult', rotate: true, rotationOffset: 1,
+        description: 'Abends kurz schauen: Ist ein Eimer voll? Dann runterbringen.' }),
+    t({ title: 'Waschbecken-Blitz', emoji: '🚰', category: 'wohnen', frequency: 'weekly',
+        days: [3], assignees: ['mama'], points: 6, group: 'adult', rotate: true, rotationOffset: 1,
+        description: 'Zwei Minuten: Waschbecken und Armatur im Bad kurz durchwischen.' }),
+  ];
+  CHORES.DEFAULT_TASKS = CHORES.DEFAULT_TASKS
+    .concat(CHORES.TASKS_UPDATE_1)
+    .concat(CHORES.TASKS_UPDATE_2);
 
   /* =======================================================================
      BELOHNUNGEN – gegen erspielte Punkte einlösbar (echte Belohnungen).

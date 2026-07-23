@@ -156,7 +156,9 @@
         ${jarHTML(donePct, pendPct)}
         <div class="kid-dots">${insts.map(i =>
           `<span class="kid-dot ${i.done ? 'on' : ''} ${i.pending ? 'wait' : ''}">${i.done ? '⭐' : (i.pending ? '⏳' : '')}</span>`).join('')}</div>
-        <div class="kid-progress-text">${allDone ? 'Alles geschafft! 🎉' : (total === 0 ? 'Heute frei! 🎈' : 'Tipp auf einen Job!')}</div>
+        <div class="kid-progress-text">${allDone ? 'Alles geschafft! 🎉'
+          : (total === 0 ? 'Heute frei! 🎈'
+          : (new Date().getHours() >= 18 ? 'Bald ist Schlafenszeit – schaffst du noch einen? 🌙' : 'Tipp auf einen Job!'))}</div>
         <div class="kid-btnrow">
           <button class="kid-ask">🔊 Was muss ich heute machen?</button>
           <button class="kid-stickers">🎁 Meine Sticker <span class="kid-stars">⭐ ${S.balance(m.id)}</span></button>

@@ -321,6 +321,26 @@ h3 { margin: 0; font-size: 1.15rem; }
 .hint { background: color-mix(in srgb, var(--accent) 10%, var(--card)); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: .92rem; }
 .ratelist { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
 .rateitem { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; border-left: 5px solid var(--cat); }
+/* Abnahme-Stau: wartet länger als 24 h */
+.rateitem.overdue { border-left-color: var(--danger); box-shadow: var(--shadow), 0 0 0 2px color-mix(in srgb, var(--danger) 45%, transparent); }
+.ri-overdue { color: var(--danger); font-weight: 800; font-size: .85rem; margin-top: 4px; }
+.navbadge.urgent { animation: badgepulse 1.2s ease-in-out infinite; }
+@keyframes badgepulse { 50% { transform: scale(1.25); } }
+
+/* Abend-Check & Wochen-Bilanz (Heute-Ansicht) */
+.evening-hint {
+  background: linear-gradient(135deg, #2d3436, #4a4a68); color: #ffeaa7;
+  border-radius: var(--radius); padding: 12px 16px; font-weight: 700; margin-bottom: 16px;
+}
+.weekcard {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 16px; margin-bottom: 20px; border-left: 5px solid var(--accent, #6c5ce7);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.weekcard-head { font-weight: 900; font-size: 1.05rem; }
+.weekcard-lag { font-weight: 700; margin-top: 4px; color: var(--warn); }
+.weekcard-item { padding-left: 8px; }
+.weekcard-ok { color: var(--good, #00b894); font-weight: 700; }
 .ri-head { display: flex; gap: 12px; align-items: flex-start; }
 .ri-emoji { font-size: 1.8rem; }
 .ri-title { font-weight: 800; font-size: 1.05rem; }

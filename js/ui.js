@@ -63,6 +63,30 @@
       <div class="subtle">${doneCount} / ${insts.length} abgenommen · ${pct}%${pendingCount ? ` · <b style="color:var(--warn)">${pendingCount} wartet auf Abnahme</b>` : ''}</div>
     </div>`));
 
+    // Abend-Check: ab 18 Uhr sanft auf offene Aufgaben des Tages hinweisen
+    const openCount = insts.filter(i => !i.done && !i.pending).length;
+    if (iso === D.today() && new Date().getHours() >= 18 && openCount > 0) {
+      wrap.appendChild(el(`<div class="evening-hint">🌙 Abend-Check: ${openCount === 1
+        ? 'Eine Aufgabe ist' : openCount + ' Aufgaben sind'} heute noch offen – kurzer End-Spurt?</div>`));
+    }
+
+    // Wochen-Bilanz: sonntags eine kleine Auswertung für die Eltern
+    if (D.weekdayIndex(iso) === 0) {
+      const r = S.weekReview(iso);
+      if (r.total) {
+        const lag = r.laggards.length
+          ? `<div class="weekcard-lag">Mehrfach liegen geblieben:</div>
+             ${r.laggards.map(x => `<div class="weekcard-item">${x.task.emoji} ${esc(x.task.title)} <b>(${x.n}×)</b></div>`).join('')}
+             <div class="subtle small">Tipp: Tag ändern oder Aufgabe pausieren → Reiter „Aufgaben".</div>`
+          : '<div class="weekcard-ok">Nichts mehrfach liegen geblieben – läuft! 💪</div>';
+        wrap.appendChild(el(`<div class="weekcard">
+          <div class="weekcard-head">📒 Wochen-Bilanz (${D.weekLabel(iso)})</div>
+          <div>${r.done} von ${r.total} Aufgaben abgenommen (<b>${r.pct} %</b>)${r.pending ? ` · ⏳ ${r.pending} warten noch auf Abnahme` : ''}.</div>
+          ${lag}
+        </div>`));
+      }
+    }
+
     // Nach Mitglied gruppieren – jede Person bekommt ihre Spalte
     const lanes = el('<div class="lanes"></div>');
     S.members().forEach(m => {
@@ -362,12 +386,20 @@
     const list = el('<div class="ratelist"></div>');
     pending.forEach(({ c, task }) => {
       const rater = S.member(c.rater);
-      const item = el(`<div class="rateitem" style="--cat:${(CAT[task.category] || {}).color || '#999'}">
+      // Abnahme-Stau: über 24 h alte Meldungen deutlich markieren
+      const waitMs = c.doneAt ? Date.now() - new Date(c.doneAt).getTime() : 0;
+      const waitDays = Math.floor(waitMs / 86400000);
+      const overdue = waitMs > 24 * 3600 * 1000;
+      const waitTxt = waitDays >= 1
+        ? (waitDays === 1 ? 'seit gestern' : `seit ${waitDays} Tagen`)
+        : `seit ${Math.floor(waitMs / 3600000)} Std.`;
+      const item = el(`<div class="rateitem ${overdue ? 'overdue' : ''}" style="--cat:${(CAT[task.category] || {}).color || '#999'}">
         <div class="ri-head">
           <span class="ri-emoji">${task.emoji}</span>
           <div>
             <div class="ri-title">${esc(task.title)}</div>
             <div class="subtle small">Gemeldet von ${c.doneBy.map(id => `${(S.member(id) || {}).emoji || ''} ${(S.member(id) || {}).short || ''}`).join(', ')} · ${esc(c.date)}</div>
+            ${overdue ? `<div class="ri-overdue">⏰ Wartet schon ${waitTxt} – die Kinder warten auf ihr Lob!</div>` : ''}
           </div>
         </div>
         <div class="ri-rater">🎲 Abnahme durch: <b style="color:${rater ? rater.color : '#333'}">${rater ? rater.emoji + ' ' + rater.name : 'jemand'}</b>
