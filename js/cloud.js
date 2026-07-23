@@ -116,6 +116,30 @@
       }
     },
 
+    // Verbindungstest für das Einstellungs-Menü: sagt klar, was los ist.
+    async test() {
+      if (!cloud.configured) return { ok: false, msg: 'Cloud ist nicht konfiguriert (js/cloud.js).' };
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}&select=data`,
+          { headers: HEADERS });
+        if (res.status === 401 || res.status === 403) return { ok: false, msg: 'Zugriff verweigert – stimmen Key und RLS-Richtlinien (README)?' };
+        if (!res.ok) {
+          const body = await res.text();
+          // Fehlende Tabelle meldet PostgREST je nach Version als 404 oder 400/42P01
+          if (res.status === 404 || body.includes('42P01') || body.includes('PGRST205'))
+            return { ok: false, msg: 'Tabelle „dashboard" fehlt – bitte das SQL aus der README im Supabase-SQL-Editor ausführen.' };
+          return { ok: false, msg: 'Supabase antwortet mit Fehler ' + res.status + '.' };
+        }
+        const rows = await res.json();
+        if (!rows.length) return { ok: true, msg: 'Verbindung OK – Tabelle ist da, noch kein Datenstand. Er wird beim nächsten Speichern hochgeladen.' };
+        const at = rows[0].data && rows[0].data.updatedAt;
+        return { ok: true, msg: 'Verbindung OK – Datenstand vorhanden' + (at ? ` (zuletzt gespeichert: ${new Date(at).toLocaleString('de-DE')})` : '') + '.' };
+      } catch (e) {
+        return { ok: false, msg: 'Keine Verbindung zu Supabase (offline oder blockiert).' };
+      }
+    },
+
     // Einmalig beim App-Start: erster Abgleich + regelmäßige Prüfung.
     start() {
       if (!cloud.configured) return;

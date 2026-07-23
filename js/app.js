@@ -119,6 +119,10 @@
           <button class="btn" id="set-export">💾 Daten sichern (Download)</button>
           <button class="btn" id="set-import">📥 Daten einlesen</button>
         </div>
+        <div class="settings-row">
+          <button class="btn" id="set-cloudtest">☁️ Cloud-Verbindung testen</button>
+        </div>
+        <p class="subtle small" id="cloudtest-result"></p>
         <hr>
         <button class="btn danger" id="set-reset">♻️ Auf Standard zurücksetzen</button>
         <p class="subtle small">Setzt Aufgaben, Erledigungen, Bewertungen und Urlaube zurück.</p>
@@ -134,6 +138,13 @@
           S.markBackup();
           box.querySelector('#backup-info').innerHTML = backupLine();
           updateBackupDot();
+        });
+        box.querySelector('#set-cloudtest').addEventListener('click', async () => {
+          const out = box.querySelector('#cloudtest-result');
+          out.textContent = 'Prüfe Verbindung …';
+          const r = await CHORES.cloud.test();
+          out.innerHTML = (r.ok ? '✅ ' : '❌ ') + r.msg;
+          if (r.ok) CHORES.cloud.sync(); // wenn alles gut ist, gleich abgleichen
         });
         const file = box.querySelector('#import-file');
         box.querySelector('#set-import').addEventListener('click', () => file.click());
