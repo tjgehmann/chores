@@ -73,6 +73,7 @@
       `<span class="fam" style="--c:${m.color}">${m.emoji} ${m.short}</span>`).join('');
 
     document.getElementById('menu-btn').addEventListener('click', openMenu);
+    document.getElementById('user-btn').addEventListener('click', () => CHORES.start.show());
   }
 
   function openMenu() {
@@ -118,6 +119,7 @@
     CHORES.ctx = ctx;   // für den Kinder-Modus, um danach aufzufrischen
     buildChrome();
     render();
+    CHORES.start.show(); // Erst auswählen, wer man ist (Toni, Leo oder Eltern)
     // Service Worker (PWA / Offline) registrieren, falls über http(s) geladen
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});

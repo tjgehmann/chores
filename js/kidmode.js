@@ -82,12 +82,15 @@
   /* ------------------------------ Ein-/Ausstieg ----------------------- */
 
   CHORES.kid = {
-    open() {
+    // childId optional: direkt mit dem Board dieses Kindes starten
+    // (z. B. vom Start-Bildschirm aus), sonst erst „Wer bist du?" zeigen.
+    open(childId) {
       overlay = el('<div id="kidapp"></div>');
       document.body.appendChild(overlay);
       document.body.classList.add('kidmode-on');
-      state.child = null;
-      renderPicker();
+      const m = childId && S.member(childId);
+      state.child = m ? m.id : null;
+      if (state.child) renderBoard(); else renderPicker();
     },
     close() {
       try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {}
@@ -95,6 +98,9 @@
       overlay = null;
       document.body.classList.remove('kidmode-on');
       if (CHORES.ctx) CHORES.ctx.render(); // Eltern-Ansicht auffrischen
+      // Zurück zur Start-Auswahl, damit als Nächstes wieder jeder
+      // selbst wählt, wer er ist (Kinder landen nicht in der Eltern-Ansicht).
+      if (CHORES.start) CHORES.start.show();
     },
   };
 
