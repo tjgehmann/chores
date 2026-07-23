@@ -25,6 +25,7 @@
     baby:     { label: 'Wäsche & Bad', emoji: '🧺', color: '#2980b9' },
     einkauf:  { label: 'Einkauf & Orga', emoji: '🛒', color: '#8e44ad' },
     spass:    { label: 'Spaß-Job',    emoji: '🎉', color: '#e84393' },
+    selbst:   { label: 'Ich selbst',  emoji: '🪥', color: '#ff7675' },
   };
 
   // Wochentage: 0 = Sonntag … 6 = Samstag
@@ -156,6 +157,55 @@
         days: [0], assignees: ['mama', 'papa', 'toni', 'leo'], points: 25, group: 'family', fun: true,
         description: '10-Minuten-Sprint: Alle räumen gemeinsam so viel auf wie möglich!' }),
   ];
+
+  /* =======================================================================
+     NACHTRAG (Juli 2026) – weitere entwicklungsgerechte Kinder-Aufgaben
+     und die neue Kategorie „Ich selbst" (Morgen-/Abend-Routinen).
+     WICHTIG: Diese Liste muss NACH den Aufgaben oben stehen, damit die
+     fortlaufenden IDs stabil bleiben – bestehende Speicherstände bekommen
+     sie über eine Migration (store.js) dazu.
+     ======================================================================= */
+  CHORES.TASKS_UPDATE_1 = [
+    // --- Ich selbst: Routinen, die Vierjährige stolz machen -------------
+    t({ title: 'Zähne putzen', emoji: '🪥', category: 'selbst', frequency: 'daily',
+        assignees: ['toni', 'leo'], points: 5, group: 'child',
+        description: 'Morgens und abends Zähne putzen – blitzeblank wie ein Profi!' }),
+    t({ title: 'Selbst anziehen', emoji: '👖', category: 'selbst', frequency: 'daily',
+        assignees: ['toni', 'leo'], points: 5, group: 'child',
+        description: 'Morgens ganz alleine anziehen – du schaffst das!' }),
+    t({ title: 'Schlafanzug-Zeit', emoji: '🌙', category: 'selbst', frequency: 'daily',
+        assignees: ['toni', 'leo'], points: 5, group: 'child',
+        description: 'Abends Schlafanzug anziehen und die Kleider weglegen.' }),
+
+    // --- Sortieren, Zuordnen, echte kleine Verantwortungen --------------
+    t({ title: 'Socken-Detektiv', emoji: '🧦', category: 'baby', frequency: 'weekly',
+        days: [1, 4], assignees: ['toni'], points: 10, group: 'child', rotate: true, rotationOffset: 0,
+        description: 'Finde alle Sockenpaare aus der frischen Wäsche und lege sie zusammen!' }),
+    t({ title: 'Handtuch-Falter', emoji: '🛀', category: 'baby', frequency: 'weekly',
+        days: [2], assignees: ['leo'], points: 8, group: 'child', rotate: true, rotationOffset: 1,
+        description: 'Die kleinen Handtücher schön zusammenlegen und stapeln.' }),
+    t({ title: 'Besteck-Sortierer', emoji: '🥄', category: 'kueche', frequency: 'weekly',
+        days: [1, 3, 5], assignees: ['toni'], points: 8, group: 'child', rotate: true, rotationOffset: 0,
+        description: 'Löffel und Gabeln aus der Spülmaschine ins richtige Fach sortieren – ohne Messer!' }),
+    t({ title: 'Kita-Auspacker', emoji: '🎒', category: 'ordnung', frequency: 'daily',
+        days: [1, 2, 3, 4, 5], assignees: ['toni', 'leo'], points: 8, group: 'child',
+        description: 'Nach der Kita: Brotdose und Flasche in die Küche bringen, Jacke aufhängen.' }),
+    t({ title: 'Back- und Kochhelfer', emoji: '🥕', category: 'kueche', frequency: 'weekly',
+        days: [6], assignees: ['leo'], points: 12, group: 'child', rotate: true, rotationOffset: 1,
+        description: 'Beim Kochen oder Backen helfen: Gemüse waschen, rühren, abmessen.' }),
+    t({ title: 'Müll-Sortierer', emoji: '♻️', category: 'draussen', frequency: 'weekly',
+        days: [2], assignees: ['toni'], points: 8, group: 'child', rotate: true, rotationOffset: 0,
+        description: 'Papier in die Papiertonne bringen – alles am richtigen Platz!' }),
+
+    // --- Neue Spaß-Jobs -------------------------------------------------
+    t({ title: 'Hausschuh-Bote', emoji: '🥿', category: 'spass', frequency: 'weekly',
+        days: [0, 3], assignees: ['leo'], points: 6, group: 'child', fun: true, rotate: true, rotationOffset: 1,
+        description: 'Bring allen in der Familie ihre Hausschuhe – Express-Lieferung!' }),
+    t({ title: 'Spielzeug-Tierarzt', emoji: '🩹', category: 'spass', frequency: 'weekly',
+        days: [3], assignees: ['toni'], points: 8, group: 'child', fun: true, rotate: true, rotationOffset: 0,
+        description: 'Untersuche dein Spielzeug: Ist etwas kaputt? Melde es in der Spielzeug-Klinik!' }),
+  ];
+  CHORES.DEFAULT_TASKS = CHORES.DEFAULT_TASKS.concat(CHORES.TASKS_UPDATE_1);
 
   /* =======================================================================
      BELOHNUNGEN – gegen erspielte Punkte einlösbar (echte Belohnungen).

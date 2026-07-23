@@ -75,7 +75,7 @@
       },
       // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
       purchases: [],
-      migrations: { uniqueIconsV1: true, workflowV1: true }, // frische Installation: alles aktuell
+      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -110,6 +110,16 @@
           if (f && t.emoji === f[0]) t.emoji = f[1];
         });
         state.migrations.uniqueIconsV1 = true;
+        S.save();
+      }
+      if (!state.migrations.kidTasksV1) {
+        // Nachtrag Juli 2026: neue Kinder-Aufgaben + „Ich selbst"-Routinen
+        // in bestehende Speicherstände übernehmen (ohne Duplikate).
+        const have = new Set(state.tasks.map(t => t.title));
+        (CHORES.TASKS_UPDATE_1 || []).forEach(t => {
+          if (!have.has(t.title)) state.tasks.push(JSON.parse(JSON.stringify(t)));
+        });
+        state.migrations.kidTasksV1 = true;
         S.save();
       }
       if (!state.migrations.workflowV1) {
