@@ -759,7 +759,12 @@ body.kidmode-on { overflow: hidden; }
 /* =======================================================================
    START-BILDSCHIRM – „Wer bist du?" beim Öffnen der App
    ======================================================================= */
-.topbar-actions { display: flex; gap: 8px; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+/* Cloud-Sync-Status (Supabase) */
+.cloud-ind { font-size: 1.1rem; opacity: .75; cursor: default; }
+.cloud-ind.syncing { animation: cloudspin 1s linear infinite; display: inline-block; }
+@keyframes cloudspin { to { transform: rotate(360deg); } }
+.cloud-ind.error, .cloud-ind.offline { opacity: 1; }
 /* roter Punkt am Zahnrad, wenn eine Datensicherung überfällig ist */
 #menu-btn { position: relative; }
 #menu-btn.attention::after {

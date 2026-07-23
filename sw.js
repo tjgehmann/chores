@@ -1,13 +1,14 @@
 /* Familien-Dashboard – Service Worker
    Ermöglicht Offline-Nutzung: die App-Dateien werden gecacht.
    Bei jeder Änderung an den Dateien die CACHE-Version hochzählen. */
-const CACHE = 'familien-dashboard-v9';
+const CACHE = 'familien-dashboard-v10';
 const ASSETS = [
   './',
   './index.html',
   './css/styles.css',
   './js/data.js',
   './js/store.js',
+  './js/cloud.js',
   './js/ui.js',
   './js/kidmode.js',
   './js/start.js',
@@ -32,8 +33,11 @@ self.addEventListener('activate', (e) => {
 });
 
 // Cache-first: schnell und offline-fähig; sonst aus dem Netz nachladen.
+// Nur eigene Dateien – fremde Ziele (z. B. Supabase) gehen immer direkt
+// ins Netz, sonst würde der Cache alte Datenstände liefern.
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then((cached) => cached || fetch(e.request).then((res) => {
       const copy = res.clone();

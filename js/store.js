@@ -124,6 +124,20 @@
       return state;
     },
     save() {
+      state.updatedAt = new Date().toISOString();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+      catch (e) { console.warn('Speichern fehlgeschlagen', e); }
+      // Änderung (gebündelt) in die Cloud hochladen
+      if (CHORES.cloud) CHORES.cloud.schedulePush();
+    },
+
+    /* ------------------------- Cloud-Anbindung --------------------------- */
+    snapshot() { return JSON.parse(JSON.stringify(state)); },
+    updatedAt() { return state.updatedAt || null; },
+    // Neueren Stand aus der Cloud übernehmen – nur lokal sichern,
+    // NICHT wieder hochladen (sonst entstünde eine Schleife).
+    applyRemote(data) {
+      state = Object.assign(defaultState(), data);
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
       catch (e) { console.warn('Speichern fehlgeschlagen', e); }
     },

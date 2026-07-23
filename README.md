@@ -55,10 +55,44 @@ sich aber jederzeit anpassen.
   Sticker-Album zum Vervollständigen. Belohnungen können von Erwachsenen als
   „eingelöst" markiert oder wieder storniert werden (Punkte zurück).
 
+## ☁️ Cloud-Speicherung (Supabase)
+
+Die Daten werden mit **Supabase** synchronisiert: Alle Geräte der Familie
+(iPad, Eltern-Handys …) sehen denselben Stand. Der Browser-Speicher bleibt
+als **Offline-Cache** erhalten – die App funktioniert ohne Netz weiter und
+lädt Änderungen automatisch nach, sobald wieder Verbindung besteht. Das
+Wolken-Symbol ☁️ oben rechts zeigt den Sync-Status (🔄 lädt, 📴 offline,
+⚠️ Fehler).
+
+**Einmalige Einrichtung** – im Supabase-Dashboard unter **SQL Editor** dieses
+Skript ausführen (legt die Tabelle an und erlaubt der App den Zugriff):
+
+```sql
+create table public.dashboard (
+  id text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.dashboard enable row level security;
+create policy "dashboard lesen"   on public.dashboard for select using (true);
+create policy "dashboard anlegen" on public.dashboard for insert with check (true);
+create policy "dashboard aendern" on public.dashboard for update using (true) with check (true);
+```
+
+Projekt-URL und Publishable-Key stehen in `js/cloud.js` (`SUPABASE_URL`,
+`SUPABASE_KEY`).
+
+> **Hinweis:** Der Publishable-Key ist für den Browser gedacht und darf im
+> Code stehen. Die Richtlinien oben erlauben aber jedem, der URL + Key kennt,
+> Lese-/Schreibzugriff auf diese eine Tabelle – für ein Familien-Board mit
+> Vornamen und Aufgaben in Ordnung, sensible Daten gehören hier nicht hinein.
+
 ## 📱 Auf dem iPad einrichten
 
 Die App ist eine reine Webapp – **kein Server, kein Login, keine Installation
-nötig**. Alle Daten bleiben lokal auf dem Gerät (Browser-Speicher).
+nötig**. Die Daten liegen in Supabase (siehe oben) und zusätzlich als
+Offline-Cache auf dem Gerät.
 
 **Empfohlen (mit Offline-Betrieb & App-Symbol):**
 
@@ -101,7 +135,8 @@ manifest.webmanifest    PWA-Einstellungen (Home-Bildschirm)
 sw.js                   Service Worker (Offline)
 css/styles.css          Design (hell & dunkel, iPad-optimiert)
 js/data.js              Familie & Standard-Aufgaben
-js/store.js             Datenhaltung, Logik, Statistik (localStorage)
+js/store.js             Datenhaltung, Logik, Statistik (localStorage-Cache)
+js/cloud.js             Cloud-Sync mit Supabase
 js/ui.js                Ansichten / Oberfläche
 js/app.js               Navigation & Start
 icons/                  App-Symbole

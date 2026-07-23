@@ -138,6 +138,8 @@
       overlay = null;
       document.body.classList.remove('startmode-on');
     },
+
+    visible() { return !!overlay; },
   };
 
 })(window.CHORES = window.CHORES || {});

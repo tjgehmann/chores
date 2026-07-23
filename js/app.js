@@ -77,6 +77,22 @@
     updateBackupDot();
   }
 
+  // Cloud-Status in der Kopfzeile (Supabase-Sync)
+  const CLOUD_STATES = {
+    ok:      ['☁️', 'Mit der Cloud synchronisiert'],
+    syncing: ['🔄', 'Synchronisiert …'],
+    offline: ['📴', 'Offline – Änderungen werden nachgereicht, sobald wieder Netz da ist'],
+    error:   ['⚠️', 'Cloud nicht erreichbar – Daten sind lokal gesichert (Tabelle eingerichtet? Siehe README)'],
+  };
+  function updateCloudInd(s) {
+    const ind = document.getElementById('cloud-ind');
+    if (!ind) return;
+    const [icon, title] = CLOUD_STATES[s] || CLOUD_STATES.ok;
+    ind.textContent = icon;
+    ind.title = title;
+    ind.className = 'cloud-ind ' + s;
+  }
+
   // Roter Punkt am Zahnrad, wenn eine Sicherung überfällig ist
   function updateBackupDot() {
     const btn = document.getElementById('menu-btn');
@@ -97,7 +113,7 @@
   function openMenu() {
     UI.modal('Einstellungen', `
       <div class="settings">
-        <p class="subtle">Die Daten werden nur auf diesem Gerät gespeichert (Browser-Speicher). Zum Übertragen kannst du sie sichern und wieder einlesen.</p>
+        <p class="subtle">Die Daten werden in der Cloud (Supabase) gespeichert und auf allen Geräten abgeglichen; auf dem Gerät bleibt ein Offline-Cache. Mit Sichern/Einlesen kannst du zusätzlich eine Datei-Kopie anlegen.</p>
         <p class="subtle" id="backup-info">${backupLine()}</p>
         <div class="settings-row">
           <button class="btn" id="set-export">💾 Daten sichern (Download)</button>
@@ -146,6 +162,18 @@
     // dass Safari/der Browser die Daten bei Platzmangel aufräumt).
     if (navigator.storage && navigator.storage.persist) {
       navigator.storage.persist().catch(() => {});
+    }
+    // Cloud-Sync (Supabase): Stand abgleichen und aktuell halten
+    if (CHORES.cloud && CHORES.cloud.configured) {
+      CHORES.cloud.onStatus(updateCloudInd);
+      CHORES.cloud.onRemoteChange(() => {
+        // Ein anderes Gerät hat gespeichert: Oberfläche auffrischen.
+        buildChrome();
+        render();
+        updateBackupDot();
+        if (CHORES.start.visible()) CHORES.start.show(); // Kachel-Zähler aktualisieren
+      });
+      CHORES.cloud.start();
     }
     // Service Worker (PWA / Offline) registrieren, falls über http(s) geladen
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
