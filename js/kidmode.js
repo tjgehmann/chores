@@ -137,8 +137,12 @@
     const checking = insts.filter(i => i.pending);
     const done = insts.filter(i => i.done);
     const total = insts.length;
-    const pct = total ? Math.round(done.length / total * 100) : 0;
-    const allDone = total > 0 && done.length === total;
+    // Das Glas füllt sich schon beim Melden (hellere Füllung), damit das
+    // Kind sofort einen Fortschritt sieht – abgenommen wird es „richtig" blau.
+    const donePct = total ? Math.round(done.length / total * 100) : 0;
+    const pendPct = total ? Math.round(checking.length / total * 100) : 0;
+    // Aus Kindersicht zählt: Ich habe alles gemacht (gemeldet oder abgenommen).
+    const allDone = total > 0 && todo.length === 0;
 
     overlay.innerHTML = '';
     const scr = el(`<div class="kid-screen kid-board" style="--c:${m.color}">
@@ -149,21 +153,20 @@
       </div>
 
       <div class="kid-progress">
-        ${jarHTML(pct)}
+        ${jarHTML(donePct, pendPct)}
         <div class="kid-dots">${insts.map(i =>
           `<span class="kid-dot ${i.done ? 'on' : ''} ${i.pending ? 'wait' : ''}">${i.done ? '⭐' : (i.pending ? '⏳' : '')}</span>`).join('')}</div>
         <div class="kid-progress-text">${allDone ? 'Alles geschafft! 🎉' : (total === 0 ? 'Heute frei! 🎈' : 'Tipp auf einen Job!')}</div>
-        <button class="kid-ask">🔊 Was muss ich heute machen?</button>
+        <div class="kid-btnrow">
+          <button class="kid-ask">🔊 Was muss ich heute machen?</button>
+          <button class="kid-stickers">🎁 Meine Sticker <span class="kid-stars">⭐ ${S.balance(m.id)}</span></button>
+        </div>
       </div>
 
-      <div class="kid-columns kid-columns-3">
+      <div class="kid-columns">
         <div class="kid-col todo">
           <div class="kid-col-head">Zu tun</div>
           <div class="kid-col-body todo-body"></div>
-        </div>
-        <div class="kid-col checking">
-          <div class="kid-col-head">Wird geprüft 👀</div>
-          <div class="kid-col-body checking-body"></div>
         </div>
         <div class="kid-col done">
           <div class="kid-col-head">Geschafft ⭐</div>
@@ -175,28 +178,31 @@
     scr.querySelector('.kid-home').addEventListener('click', () => CHORES.kid.close());
     scr.querySelector('.kid-switch').addEventListener('click', () => renderPicker());
     scr.querySelector('.kid-ask').addEventListener('click', () => announce(m, todo, checking, done));
+    scr.querySelector('.kid-stickers').addEventListener('click', () => renderStickers());
 
     const todoBody = scr.querySelector('.todo-body');
-    const checkBody = scr.querySelector('.checking-body');
     const doneBody = scr.querySelector('.done-body');
     if (!total) todoBody.appendChild(el('<div class="kid-empty">Heute hast du frei 🎈</div>'));
     else if (!todo.length) todoBody.appendChild(el('<div class="kid-empty">Nichts mehr zu tun! 🌟</div>'));
-    if (total && !checking.length) checkBody.appendChild(el('<div class="kid-empty small">–</div>'));
-    if (total && !done.length) doneBody.appendChild(el('<div class="kid-empty small">–</div>'));
+    if (total && !checking.length && !done.length) doneBody.appendChild(el('<div class="kid-empty small">–</div>'));
     todo.forEach(i => todoBody.appendChild(boardCard(i, 'todo')));
-    checking.forEach(i => checkBody.appendChild(boardCard(i, 'checking')));
+    // Gemeldete Aufgaben gelten fürs Kind als geschafft – mit 👀, solange
+    // noch jemand drüberschaut.
+    checking.forEach(i => doneBody.appendChild(boardCard(i, 'checking')));
     done.forEach(i => doneBody.appendChild(boardCard(i, 'done')));
 
     overlay.appendChild(scr);
     if (allDone) setTimeout(() => celebrateAll(m), 250);
   }
 
-  // Belohnungsglas als Fortschritt (füllt sich mit „Saft" + Sternen)
-  function jarHTML(pct) {
+  // Belohnungsglas als Fortschritt (füllt sich mit „Saft" + Sternen);
+  // gemeldete Aufgaben füllen es hell, abgenommene kräftig.
+  function jarHTML(donePct, pendPct) {
     return `<div class="kid-jar" title="dein Belohnungsglas">
       <div class="jar-lid"></div>
       <div class="jar-body">
-        <div class="jar-fill" style="height:${pct}%"></div>
+        <div class="jar-fill-pending" style="bottom:${donePct}%;height:${pendPct}%"></div>
+        <div class="jar-fill" style="height:${donePct}%"></div>
         <div class="jar-shine"></div>
       </div>
     </div>`;
@@ -262,6 +268,89 @@
     overlay.appendChild(focus);
     // Aufgabe (und ggf. den Grund) direkt vorlesen
     setTimeout(() => speak(t.title + (i.rejected && i.rejection && i.rejection.reason ? '. Nochmal: ' + i.rejection.reason : '')), 350);
+  }
+
+  /* --------------------- Bildschirm: Meine Sticker -------------------- */
+  // Sticker-Album + Kaufen direkt im Kinder-Modus: Das Kind sieht sein
+  // Sterne-Guthaben (erspielte Punkte) und tauscht es gegen Sammel-Sticker.
+
+  const RARITY = {
+    common:    { label: 'Sticker',      color: '#b2bec3' },
+    rare:      { label: 'Selten ✨',     color: '#a29bfe' },
+    legendary: { label: 'Superselten 👑', color: '#fdcb6e' },
+  };
+
+  function renderStickers() {
+    const m = S.member(state.child);
+    const balance = S.balance(m.id);
+    const owned = S.stickerCollection(m.id);
+    const ownedCount = Object.values(owned).reduce((a, b) => a + b, 0);
+
+    overlay.innerHTML = '';
+    const scr = el(`<div class="kid-screen kid-stickshop" style="--c:${m.color}">
+      <div class="kid-top">
+        <button class="kid-back-board" title="zurück">↩︎</button>
+        <div class="kid-me"><span class="kid-me-avatar">${m.emoji}</span><span class="kid-me-name">Deine Sticker</span></div>
+        <div class="kid-balance" title="deine Sterne">⭐ ${balance}</div>
+      </div>
+      <div class="kid-stick-sub">${ownedCount
+        ? `Du hast schon <b>${ownedCount}</b> Sticker im Album! 🎉`
+        : 'Sammle Sterne und tausche sie gegen Sticker!'}</div>
+      <div class="kid-stick-grid"></div>
+    </div>`);
+
+    scr.querySelector('.kid-back-board').addEventListener('click', () => renderBoard());
+
+    const grid = scr.querySelector('.kid-stick-grid');
+    S.stickers().forEach(sk => {
+      const n = owned[sk.id] || 0;
+      const affordable = balance >= sk.cost;
+      const rar = RARITY[sk.rarity] || RARITY.common;
+      const card = el(`<button class="kid-stick ${n ? 'owned' : ''} ${affordable ? '' : 'locked'}" style="--r:${rar.color}">
+        ${n ? `<span class="kid-stick-count">×${n}</span>` : ''}
+        <span class="kid-stick-emoji">${sk.emoji}</span>
+        <span class="kid-stick-name">${esc(sk.name)}</span>
+        <span class="kid-stick-cost">⭐ ${sk.cost}</span>
+      </button>`);
+      card.addEventListener('click', () => {
+        if (!affordable) {
+          speak(`${sk.name}. Dafür brauchst du noch ${sk.cost - balance} Sterne. Weiter so!`);
+          card.classList.remove('shake'); void card.offsetWidth;
+          card.classList.add('shake');
+          return;
+        }
+        confirmSticker(m, sk);
+      });
+      grid.appendChild(card);
+    });
+
+    overlay.appendChild(scr);
+  }
+
+  // Großer Ja/Nein-Dialog vor dem Kauf (mit Vorlesen)
+  function confirmSticker(m, sk) {
+    const ask = el(`<div class="kid-ask-overlay">
+      <div class="kid-ask-card" style="--c:${m.color}">
+        <div class="kid-buy-emoji">${sk.emoji}</div>
+        <div class="kid-ask-title">${esc(sk.name)} für ⭐ ${sk.cost} kaufen?</div>
+        <div class="kid-buy-btns">
+          <button class="kid-buy-yes">Ja! 🎉</button>
+          <button class="kid-buy-no">Lieber nicht</button>
+        </div>
+      </div>
+    </div>`);
+    ask.querySelector('.kid-buy-no').addEventListener('click', () => ask.remove());
+    ask.addEventListener('click', (e) => { if (e.target === ask) ask.remove(); });
+    ask.querySelector('.kid-buy-yes').addEventListener('click', () => {
+      const res = S.buy(m.id, 'sticker', sk.id);
+      ask.remove();
+      if (!res.ok) { speak('Das hat leider nicht geklappt.'); return; }
+      chime(); confetti();
+      speak(`Juhu! Der Sticker ${sk.name} gehört jetzt dir!`);
+      renderStickers();
+    });
+    overlay.appendChild(ask);
+    speak(`Möchtest du den Sticker ${sk.name} für ${sk.cost} Sterne kaufen?`);
   }
 
   /* -------------- „Was muss ich heute machen?" – vorlesen ------------- */

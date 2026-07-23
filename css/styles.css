@@ -506,6 +506,12 @@ body.kidmode-on { overflow: hidden; }
   position: absolute; left: 0; right: 0; bottom: 0;
   background: linear-gradient(180deg, #74b9ff, #0984e3); transition: height .6s ease;
 }
+/* helle Füllung für „gemeldet, wird noch angeschaut" */
+.jar-fill-pending {
+  position: absolute; left: 0; right: 0;
+  background: linear-gradient(180deg, #c9e5ff, #8ec8ff); opacity: .85;
+  transition: height .6s ease, bottom .6s ease;
+}
 .jar-shine { position: absolute; top: 6px; left: 8px; width: 10px; height: 40px; background: #ffffff66; border-radius: 6px; }
 
 /* „Was muss ich heute machen?" */
@@ -516,6 +522,62 @@ body.kidmode-on { overflow: hidden; }
   box-shadow: 0 10px 24px #0984e355; transition: transform .1s;
 }
 .kid-ask:active { transform: scale(.95); }
+.kid-btnrow { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.kid-btnrow .kid-ask { margin-top: 0; }
+.kid-stickers {
+  border: none; cursor: pointer;
+  background: linear-gradient(135deg, #e84393, #fd79a8); color: #fff;
+  font-size: 1.25rem; font-weight: 900; padding: 14px 26px; border-radius: 999px;
+  box-shadow: 0 10px 24px #e8439355; transition: transform .1s;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.kid-stickers:active { transform: scale(.95); }
+.kid-stars { background: #ffffff33; border-radius: 999px; padding: 2px 12px; }
+
+/* --- Meine Sticker (Album + Kaufen im Kinder-Modus) --- */
+.kid-back-board {
+  width: 58px; height: 58px; border-radius: 20px; border: none; cursor: pointer;
+  font-size: 1.8rem; background: #ffffffcc; box-shadow: 0 6px 16px rgba(0,0,0,.12);
+}
+.kid-back-board:active { transform: scale(.92); }
+.kid-balance {
+  font-size: 1.5rem; font-weight: 900; background: #ffffffcc; border-radius: 999px;
+  padding: 10px 20px; box-shadow: 0 6px 16px rgba(0,0,0,.12); color: #e1a100;
+}
+@media (prefers-color-scheme: dark) { .kid-balance { background: #ffffff22; } }
+.kid-stick-sub { text-align: center; font-size: 1.25rem; font-weight: 700; margin: 10px 0 14px; }
+.kid-stick-grid {
+  flex: 1; overflow-y: auto; display: grid; gap: 14px; align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); padding-bottom: 10px;
+}
+.kid-stick {
+  position: relative; border: none; cursor: pointer; background: #fff; border-radius: 24px;
+  padding: 16px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.1); border-bottom: 6px solid var(--r); transition: transform .1s;
+}
+@media (prefers-color-scheme: dark) { .kid-stick { background: #2a2f3a; color: #f4f6fb; } }
+.kid-stick:active { transform: scale(.94); }
+.kid-stick.locked { opacity: .55; filter: saturate(.6); }
+.kid-stick.owned { box-shadow: 0 8px 20px rgba(0,0,0,.1), 0 0 0 3px var(--r); }
+.kid-stick-emoji { font-size: 3.4rem; }
+.kid-stick-name { font-size: 1.05rem; font-weight: 800; }
+.kid-stick-cost { font-size: .95rem; font-weight: 900; color: #e1a100; background: #fff6d8; border-radius: 999px; padding: 2px 12px; }
+@media (prefers-color-scheme: dark) { .kid-stick-cost { background: #4a3f1e; } }
+.kid-stick-count {
+  position: absolute; top: 8px; right: 10px; font-size: .95rem; font-weight: 900;
+  background: var(--r); color: #fff; border-radius: 999px; padding: 2px 10px;
+}
+.kid-buy-emoji { font-size: 5.4rem; margin-bottom: 6px; }
+.kid-buy-btns { display: flex; gap: 14px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+.kid-buy-yes {
+  border: none; cursor: pointer; background: linear-gradient(135deg, #00b894, #55efc4); color: #fff;
+  font-size: 1.5rem; font-weight: 900; padding: 16px 40px; border-radius: 24px; box-shadow: 0 10px 24px #00b89455;
+}
+.kid-buy-no {
+  border: none; cursor: pointer; background: #eceff4; color: #636e72;
+  font-size: 1.2rem; font-weight: 800; padding: 16px 26px; border-radius: 24px;
+}
+@media (prefers-color-scheme: dark) { .kid-buy-no { background: #3a4150; color: #dfe4ea; } }
 .kid-ask-overlay {
   position: absolute; inset: 0; z-index: 30; display: grid; place-items: center;
   padding: 22px; background: rgba(0,0,0,.35); backdrop-filter: blur(3px); animation: kidpop .18s;
@@ -546,9 +608,7 @@ body.kidmode-on { overflow: hidden; }
 }
 
 .kid-columns { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; min-height: 0; margin-top: 8px; }
-.kid-columns-3 { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .kid-dot.wait { background: #ffeaa7; }
-.kid-col.checking .kid-col-head { color: #e1a100; }
 .kid-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .kid-card-wait { font-size: 1.5rem; }
 .kid-card-again { font-size: 1.4rem; }
@@ -563,7 +623,7 @@ body.kidmode-on { overflow: hidden; }
 .kf-again-by { font-size: .9rem; font-weight: 600; opacity: .8; }
 .kid-yay-sub { font-size: 1.3rem; font-weight: 700; color: #636e72; margin-top: 4px; }
 @media (prefers-color-scheme: dark) { .kid-yay-sub { color: #b2bec3; } }
-@media (max-width: 720px) { .kid-columns-3 { grid-template-columns: 1fr; overflow-y: auto; } }
+@media (max-width: 720px) { .kid-columns { grid-template-columns: 1fr; overflow-y: auto; } }
 .kid-col { background: #ffffffaa; border-radius: 24px; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
 @media (prefers-color-scheme: dark) { .kid-col { background: #ffffff14; } }
 .kid-col-head { text-align: center; font-size: 1.4rem; font-weight: 900; padding: 12px; }
@@ -700,6 +760,45 @@ body.kidmode-on { overflow: hidden; }
    START-BILDSCHIRM – „Wer bist du?" beim Öffnen der App
    ======================================================================= */
 .topbar-actions { display: flex; gap: 8px; }
+/* roter Punkt am Zahnrad, wenn eine Datensicherung überfällig ist */
+#menu-btn { position: relative; }
+#menu-btn.attention::after {
+  content: ''; position: absolute; top: 4px; right: 4px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--danger, #d63031); box-shadow: 0 0 0 2px var(--card, #fff);
+}
+
+/* --- Eltern-Sperre (Rechenaufgabe) --- */
+.gate-back {
+  position: absolute; inset: 0; z-index: 50; display: grid; place-items: center;
+  padding: 22px; background: rgba(0,0,0,.35); backdrop-filter: blur(3px); animation: fade .15s;
+}
+.gate-card {
+  position: relative; width: min(360px, 100%); background: #fff; border-radius: 28px;
+  padding: 26px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.3);
+  color: #2d3436;
+}
+@media (prefers-color-scheme: dark) { .gate-card { background: #262a33; color: #f4f6fb; } }
+.gate-close { position: absolute; top: 14px; right: 16px; border: none; background: none; font-size: 1.4rem; cursor: pointer; color: #b2bec3; }
+.gate-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 6px; }
+.gate-q { font-size: 1.15rem; margin-bottom: 12px; }
+.gate-display {
+  font-size: 1.8rem; font-weight: 900; letter-spacing: .1em; min-height: 2.4rem;
+  background: #eceff4; border-radius: 14px; padding: 4px 10px; margin-bottom: 14px;
+}
+@media (prefers-color-scheme: dark) { .gate-display { background: #1f2530; } }
+.gate-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.gate-key {
+  border: none; cursor: pointer; font-size: 1.4rem; font-weight: 800; padding: 14px 0;
+  border-radius: 16px; background: #eceff4; color: inherit; transition: transform .08s;
+}
+@media (prefers-color-scheme: dark) { .gate-key { background: #3a4150; } }
+.gate-key:active { transform: scale(.93); }
+.gate-key.ok { background: #00b894; color: #fff; }
+.shake { animation: shake .4s; }
+@keyframes shake {
+  20% { transform: translateX(-8px); } 40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); } 80% { transform: translateX(6px); }
+}
 body.startmode-on { overflow: hidden; }
 
 #startapp {

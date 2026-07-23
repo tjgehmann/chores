@@ -129,6 +129,20 @@
     },
     reset() { state = defaultState(); S.save(); },
     exportJSON() { return JSON.stringify(state, null, 2); },
+
+    /* ------------------------- Sicherung (Backup) ------------------------ */
+    // Merkt sich, wann zuletzt gesichert wurde (beim Daten-Export gesetzt).
+    markBackup() { state.lastBackupAt = new Date().toISOString(); S.save(); },
+    backupInfo() {
+      const DAY = 24 * 3600 * 1000;
+      const last = state.lastBackupAt || null;
+      const days = last ? Math.floor((Date.now() - new Date(last).getTime()) / DAY) : null;
+      const used = Math.floor((Date.now() - D.parse(state.createdAt || D.today()).getTime()) / DAY);
+      // Fällig: noch nie gesichert (und App schon über eine Woche in Benutzung)
+      // oder die letzte Sicherung ist über 30 Tage her.
+      const due = last ? days > 30 : used > 7;
+      return { last, days, due };
+    },
     importJSON(text) {
       const parsed = JSON.parse(text);
       state = Object.assign(defaultState(), parsed);

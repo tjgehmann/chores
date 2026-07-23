@@ -18,6 +18,54 @@
 
   let overlay = null;
 
+  // Eltern-Sperre: kleine Rechenaufgabe mit Zahlenfeld. Für Erwachsene
+  // trivial, für Vierjährige (noch) nicht lösbar – schützt Editor,
+  // Abnahme und „Zurücksetzen" vor neugierigen Kinderfingern.
+  function parentGate(onOk) {
+    const a = 11 + Math.floor(Math.random() * 8); // 11–18
+    const b = 3 + Math.floor(Math.random() * 6);  // 3–8
+    const answer = String(a + b);
+    let entered = '';
+
+    const gate = el(`<div class="gate-back">
+      <div class="gate-card">
+        <button class="gate-close" title="abbrechen">✕</button>
+        <div class="gate-title">🔒 Eltern-Check</div>
+        <div class="gate-q">Wie viel ist <b>${a} + ${b}</b>?</div>
+        <div class="gate-display">&nbsp;</div>
+        <div class="gate-pad"></div>
+      </div>
+    </div>`);
+    const display = gate.querySelector('.gate-display');
+    const card = gate.querySelector('.gate-card');
+    const pad = gate.querySelector('.gate-pad');
+
+    const show = () => { display.textContent = entered || ' '; };
+    const wrong = () => {
+      entered = ''; show();
+      card.classList.remove('shake'); void card.offsetWidth; // Animation neu starten
+      card.classList.add('shake');
+    };
+
+    ['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(key => {
+      const btn = el(`<button class="gate-key ${key === 'OK' ? 'ok' : ''}">${key}</button>`);
+      btn.addEventListener('click', () => {
+        if (key === '⌫') { entered = entered.slice(0, -1); show(); return; }
+        if (key === 'OK') {
+          if (entered === answer) { gate.remove(); onOk(); }
+          else wrong();
+          return;
+        }
+        if (entered.length < 3) { entered += key; show(); }
+      });
+      pad.appendChild(btn);
+    });
+
+    gate.querySelector('.gate-close').addEventListener('click', () => gate.remove());
+    gate.addEventListener('click', (e) => { if (e.target === gate) gate.remove(); });
+    (overlay || document.body).appendChild(gate);
+  }
+
   // Offene (noch zu erledigende) Aufgaben von heute für eine Personengruppe
   function openTasks(memberIds) {
     return S.instancesFor(D.today()).filter(i =>
@@ -75,10 +123,10 @@
         <span class="sp-name">Eltern</span>
         ${hintHTML(open, total)}
       </button>`);
-      p.addEventListener('click', () => {
+      p.addEventListener('click', () => parentGate(() => {
         CHORES.start.hide();
         if (CHORES.ctx) CHORES.ctx.go('today');
-      });
+      }));
       row.appendChild(p);
 
       document.body.appendChild(overlay);

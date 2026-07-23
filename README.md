@@ -10,6 +10,11 @@ sich aber jederzeit anpassen.
 
 ## ✨ Funktionen
 
+- **Start-Bildschirm „Wer bist du?"** – beim Öffnen wählt jeder sich selbst:
+  Toni und Leo landen direkt in ihrem Kinder-Board, die Eltern im Dashboard.
+  Jede Kachel zeigt, wie viele Aufgaben heute noch offen sind.
+- **Eltern-Sperre** 🔒 – die Eltern-Ansicht (Editor, Abnahme, Zurücksetzen) ist
+  durch eine kleine Rechenaufgabe geschützt, die Vierjährige noch nicht lösen können.
 - **Heute** – alle Aufgaben des Tages, nach Person sortiert, mit Fortschrittsbalken. Antippen = erledigt.
 - **Wochenansicht** – die ganze Woche auf einen Blick (Mo–So).
 - **Monatsansicht** – Kalender mit Fortschritt pro Tag und Monats-Punktestand.
@@ -23,11 +28,15 @@ sich aber jederzeit anpassen.
 - **Kinder-Modus** 🧒 – ein eigener Vollbild-Modus für die Kinder (Button „Kinder"),
   entwicklungsgerecht für Vierjährige gestaltet:
   - „Wer bist du?" → großes Kind-Bild auswählen
-  - Kanban-Board **„Zu tun" → „Geschafft"** mit riesigen Icons
+  - Board mit zwei Spalten **„Zu tun" → „Geschafft"** mit riesigen Icons;
+    gemeldete Aufgaben liegen mit 👀 schon bei „Geschafft", bis sie abgenommen sind
   - Antippen öffnet ein **Fokus-Vollbild** mit nur einer Aufgabe
   - **Vorlesen** per Tippen (Sprachausgabe, da noch nicht lesend)
   - großer **„Fertig!"-Knopf** mit **Konfetti + Jubel-Klang**
-  - Fortschritt als sich füllendes **Belohnungsglas** (statt abstrakter Zahlen)
+  - Fortschritt als sich füllendes **Belohnungsglas** (statt abstrakter Zahlen);
+    füllt sich hell schon beim Melden, kräftig nach der Abnahme
+  - **„Meine Sticker"** 🎁 – Sterne-Guthaben und Sticker-Album direkt im
+    Kinder-Modus: Sticker ansehen, vorlesen lassen und selbst kaufen
   - Lob auf **Beitrag & Anstrengung** („du hast geholfen!"), kein Scheitern-Frame
 - **Klassisch & ausgefallen** – von „Spülmaschine ausräumen" bis „Krümel-Detektiv", „Familien-DJ" und „Licht-Wächter".
 - **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
@@ -79,6 +88,10 @@ python3 -m http.server 8000
 - **Standard-Aufgabenkatalog**: in `js/data.js` unter `DEFAULT_TASKS`.
 - **Daten sichern / übertragen**: Zahnrad ⚙️ oben rechts → Sichern / Einlesen
   (JSON-Datei). So lassen sich die Daten z. B. auf ein anderes Gerät bringen.
+  Die App merkt sich die letzte Sicherung und erinnert mit einem roten Punkt
+  am Zahnrad, wenn sie länger als 30 Tage her ist. Zusätzlich bittet die App
+  den Browser um dauerhaften Speicher (`navigator.storage.persist()`), damit
+  die Daten nicht bei Platzmangel aufgeräumt werden.
 
 ## 🗂️ Projektaufbau
 

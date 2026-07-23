@@ -74,12 +74,31 @@
 
     document.getElementById('menu-btn').addEventListener('click', openMenu);
     document.getElementById('user-btn').addEventListener('click', () => CHORES.start.show());
+    updateBackupDot();
+  }
+
+  // Roter Punkt am Zahnrad, wenn eine Sicherung überfällig ist
+  function updateBackupDot() {
+    const btn = document.getElementById('menu-btn');
+    if (btn) btn.classList.toggle('attention', S.backupInfo().due);
+  }
+
+  function backupLine() {
+    const b = S.backupInfo();
+    if (!b.last) return b.due
+      ? '<b style="color:var(--warn)">⚠️ Noch keine Sicherung erstellt – jetzt wäre ein guter Zeitpunkt!</b>'
+      : 'Noch keine Sicherung erstellt.';
+    const when = b.days === 0 ? 'heute' : (b.days === 1 ? 'gestern' : `vor ${b.days} Tagen`);
+    return b.due
+      ? `<b style="color:var(--warn)">⚠️ Letzte Sicherung ${when} – bitte wieder sichern!</b>`
+      : `Letzte Sicherung: ${when}.`;
   }
 
   function openMenu() {
     UI.modal('Einstellungen', `
       <div class="settings">
         <p class="subtle">Die Daten werden nur auf diesem Gerät gespeichert (Browser-Speicher). Zum Übertragen kannst du sie sichern und wieder einlesen.</p>
+        <p class="subtle" id="backup-info">${backupLine()}</p>
         <div class="settings-row">
           <button class="btn" id="set-export">💾 Daten sichern (Download)</button>
           <button class="btn" id="set-import">📥 Daten einlesen</button>
@@ -96,6 +115,9 @@
           a.href = URL.createObjectURL(blob);
           a.download = `familien-dashboard-${D.today()}.json`;
           a.click();
+          S.markBackup();
+          box.querySelector('#backup-info').innerHTML = backupLine();
+          updateBackupDot();
         });
         const file = box.querySelector('#import-file');
         box.querySelector('#set-import').addEventListener('click', () => file.click());
@@ -120,6 +142,11 @@
     buildChrome();
     render();
     CHORES.start.show(); // Erst auswählen, wer man ist (Toni, Leo oder Eltern)
+    // Browser bitten, den Speicher dauerhaft zu behalten (Schutz davor,
+    // dass Safari/der Browser die Daten bei Platzmangel aufräumt).
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
     // Service Worker (PWA / Offline) registrieren, falls über http(s) geladen
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
