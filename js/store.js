@@ -75,6 +75,10 @@
       },
       // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
       purchases: [],
+      // Familien-Gemeinschaftsziel: { title, emoji, target, startAt } | null
+      goal: null,
+      // Tageswahl der Kinder-Specials, Schlüssel `${taskId}|${dateIso}` -> memberId
+      picks: {},
       migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
@@ -95,6 +99,7 @@
       if (!state.shop.rewards) state.shop.rewards = JSON.parse(JSON.stringify(CHORES.DEFAULT_REWARDS));
       if (!state.shop.stickers) state.shop.stickers = JSON.parse(JSON.stringify(CHORES.DEFAULT_STICKERS));
       state.purchases = state.purchases || [];
+      state.picks = state.picks || {};
 
       // Einmalige Migrationen (ändern nur, was nötig ist – Daten bleiben erhalten)
       state.migrations = state.migrations || {};
@@ -322,13 +327,58 @@
     },
 
     // Tatsächlich zuständige Person(en) an einem Datum – bei rotierenden
-    // Aufgaben wechselt das wöchentlich reihum durch den Pool.
+    // Aufgaben wechselt das wöchentlich reihum durch den Pool. Eine
+    // Tageswahl der Kinder (picks) übersteuert die Rotation für den Tag.
     assigneesFor(task, iso) {
+      const pick = state.picks[S.key(task.id, iso)];
+      if (pick && S.member(pick)) return [pick];
       if (!task.rotate) return task.assignees;
       const pool = S.rotationPool(task);
       if (!pool.length) return task.assignees;
       const i = (D.weekIndex(iso) + (task.rotationOffset || 0)) % pool.length;
       return [pool[(i + pool.length) % pool.length]];
+    },
+
+    /* ---------------- Tages-Specials: die Kinder wählen ------------------ */
+    // Die rotierenden Wochen-Kinderaufgaben eines Tages – daraus dürfen
+    // die Kinder wählen (wer zuerst wählt, bekommt seinen Wunsch).
+    daySpecials(iso) {
+      return state.tasks.filter(t =>
+        t.rotate && t.frequency === 'weekly' && t.group === 'child' &&
+        S.taskOccursOn(t, iso) && S.rotationPool(t).length >= 2);
+    },
+    specialPick(taskId, iso) { return state.picks[S.key(taskId, iso)] || null; },
+    pickSpecial(taskId, iso, childId) {
+      state.picks[S.key(taskId, iso)] = childId;
+      // Das andere Special des Tages geht automatisch ans andere Kind
+      const others = S.daySpecials(iso).filter(t => t.id !== taskId);
+      if (others.length === 1) {
+        const sibling = S.rotationPool(others[0]).find(id => id !== childId);
+        if (sibling) state.picks[S.key(others[0].id, iso)] = sibling;
+      }
+      S.save();
+    },
+
+    /* -------------------- Familien-Gemeinschaftsziel --------------------- */
+    goal() { return state.goal || null; },
+    setGoal({ title, emoji, target }) {
+      state.goal = {
+        title: (title || '').trim(),
+        emoji: emoji || '🎯',
+        target: Math.max(1, Number(target) || 100),
+        // Beim Bearbeiten bleibt der Startpunkt erhalten
+        startAt: (state.goal && state.goal.startAt) || D.today(),
+      };
+      S.save();
+    },
+    clearGoal() { state.goal = null; S.save(); },
+    // Gemeinsam gesammelte Punkte seit Ziel-Start (einmal pro Erledigung)
+    goalProgress() {
+      if (!state.goal) return 0;
+      const start = state.goal.startAt;
+      return Object.values(state.completions)
+        .filter(c => c.status === 'approved' && c.date >= start)
+        .reduce((sum, c) => sum + ((S.task(c.taskId) || {}).points || 0), 0);
     },
 
     // Alle Aufgaben-Instanzen für einen Tag (angereichert mit Status)

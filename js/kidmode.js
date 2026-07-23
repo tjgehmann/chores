@@ -144,6 +144,31 @@
     // Aus Kindersicht zählt: Ich habe alles gemacht (gemeldet oder abgenommen).
     const allDone = total > 0 && todo.length === 0;
 
+    // Tageswahl: Solange beide Tages-Specials offen und ungewählt sind,
+    // darf sich das Kind eines aussuchen (wer zuerst wählt, gewinnt).
+    const today = D.today();
+    const specials = S.daySpecials(today);
+    const specialIds = new Set(specials.map(t => t.id));
+    const choosable = specials.length === 2 &&
+      specials.every(t => !S.specialPick(t.id, today)) &&
+      specials.every(t => S.instance(t, today).status === 'open') &&
+      specials.some(t => S.rotationPool(t).includes(state.child));
+    const todoShown = choosable ? todo.filter(i => !specialIds.has(i.task.id)) : todo;
+
+    // Familienziel: gemeinsames Glas für alle
+    const goal = S.goal();
+    let goalHTML = '';
+    if (goal) {
+      const gp = S.goalProgress();
+      const gpct = Math.min(100, Math.round(gp / goal.target * 100));
+      const reached = gp >= goal.target;
+      goalHTML = `<div class="kid-goal ${reached ? 'reached' : ''}" title="Familienziel: ${esc(goal.title)}">
+        <span class="kid-goal-emoji">${goal.emoji}</span>
+        <div class="kid-goal-bar"><span style="width:${gpct}%"></span></div>
+        <span class="kid-goal-txt">${reached ? 'Geschafft! 🎉' : `⭐ ${gp} / ${goal.target}`}</span>
+      </div>`;
+    }
+
     overlay.innerHTML = '';
     const scr = el(`<div class="kid-screen kid-board" style="--c:${m.color}">
       <div class="kid-top">
@@ -163,6 +188,7 @@
           <button class="kid-ask">🔊 Was muss ich heute machen?</button>
           <button class="kid-stickers">🎁 Wünsche & Sticker <span class="kid-stars">⭐ ${S.balance(m.id)}</span></button>
         </div>
+        ${goalHTML}
       </div>
 
       <div class="kid-columns">
@@ -184,10 +210,35 @@
 
     const todoBody = scr.querySelector('.todo-body');
     const doneBody = scr.querySelector('.done-body');
+
+    // Tageswahl-Karte: beide Specials zur Auswahl anbieten
+    if (choosable) {
+      const box = el(`<div class="kid-choice">
+        <div class="kid-choice-head">🎁 Such dir deinen Tages-Job aus!</div>
+        <div class="kid-choice-row"></div>
+      </div>`);
+      const row = box.querySelector('.kid-choice-row');
+      specials.forEach(t => {
+        const cat = CAT[t.category] || { color: '#999' };
+        const b = el(`<button class="kid-choice-card" style="--cat:${cat.color}">
+          <span class="kid-choice-emoji">${t.emoji}</span>
+          <span class="kid-choice-title">${esc(t.title)}</span>
+        </button>`);
+        b.addEventListener('click', () => {
+          S.pickSpecial(t.id, today, state.child);
+          chime();
+          speak('Gute Wahl! ' + t.title + ' gehört heute dir.');
+          renderBoard();
+        });
+        row.appendChild(b);
+      });
+      todoBody.appendChild(box);
+    }
+
     if (!total) todoBody.appendChild(el('<div class="kid-empty">Heute hast du frei 🎈</div>'));
-    else if (!todo.length) todoBody.appendChild(el('<div class="kid-empty">Nichts mehr zu tun! 🌟</div>'));
+    else if (!todoShown.length && !choosable) todoBody.appendChild(el('<div class="kid-empty">Nichts mehr zu tun! 🌟</div>'));
     if (total && !checking.length && !done.length) doneBody.appendChild(el('<div class="kid-empty small">–</div>'));
-    todo.forEach(i => todoBody.appendChild(boardCard(i, 'todo')));
+    todoShown.forEach(i => todoBody.appendChild(boardCard(i, 'todo')));
     // Gemeldete Aufgaben gelten fürs Kind als geschafft – mit 👀, solange
     // noch jemand drüberschaut.
     checking.forEach(i => doneBody.appendChild(boardCard(i, 'checking')));
@@ -247,14 +298,49 @@
         <div class="kid-focus-title">${esc(t.title)}</div>
         ${t.description ? `<div class="kid-focus-desc">${esc(t.description)}</div>` : ''}
         ${i.rejected && i.rejection ? `<div class="kid-focus-again">🔁 Nochmal, bitte!${i.rejection.reason ? `<br><b>${esc(i.rejection.reason)}</b>` : ''}${rejBy ? `<br><span class="kf-again-by">${rejBy.emoji} ${esc(rejBy.short)} hat nachgeschaut</span>` : ''}</div>` : ''}
-        <button class="kid-speak">🔊 Vorlesen</button>
+        <div class="kid-focus-btnrow">
+          <button class="kid-speak">🔊 Vorlesen</button>
+          <button class="kid-timer-btn">⏳ Sanduhr starten</button>
+        </div>
+        <div class="kid-timer" hidden>
+          <span class="kid-timer-face">⏳</span>
+          <div class="kid-timer-bar"><span style="width:100%"></span></div>
+        </div>
         <button class="kid-done-btn">Fertig! ✓</button>
       </div>
     </div>`);
-    focus.querySelector('.kid-focus-back').addEventListener('click', () => { window.speechSynthesis && window.speechSynthesis.cancel(); focus.remove(); });
+
+    // Sanduhr: 5 Minuten Wettlauf gegen den Sand (rein visuell, kein Druck –
+    // am Ende gibt es nur einen freundlichen Klang und eine Frage)
+    let timerInt = null;
+    const TIMER_SECS = 5 * 60;
+    const tbtn = focus.querySelector('.kid-timer-btn');
+    const tbox = focus.querySelector('.kid-timer');
+    const tbar = focus.querySelector('.kid-timer-bar span');
+    const stopTimer = () => { if (timerInt) { clearInterval(timerInt); timerInt = null; } };
+    tbtn.addEventListener('click', () => {
+      if (timerInt) return;
+      tbox.hidden = false;
+      tbtn.textContent = '⏳ Der Sand läuft!';
+      speak('Die Sanduhr läuft! Schaffst du es, bevor der Sand durch ist?');
+      const t0 = Date.now();
+      timerInt = setInterval(() => {
+        const left = Math.max(0, TIMER_SECS - (Date.now() - t0) / 1000);
+        tbar.style.width = (left / TIMER_SECS * 100) + '%';
+        if (!left) {
+          stopTimer();
+          tbtn.textContent = '🔔 Sanduhr ist durch!';
+          chime();
+          speak('Die Sanduhr ist durch! Bist du fertig?');
+        }
+      }, 1000);
+    });
+
+    focus.querySelector('.kid-focus-back').addEventListener('click', () => { stopTimer(); window.speechSynthesis && window.speechSynthesis.cancel(); focus.remove(); });
     focus.querySelector('.kid-speak').addEventListener('click', () =>
       speak(t.title + '. ' + (t.description || '') + (i.rejected && i.rejection && i.rejection.reason ? ' Nochmal: ' + i.rejection.reason : '')));
     focus.querySelector('.kid-done-btn').addEventListener('click', () => {
+      stopTimer();
       S.submit(t.id, i.date);   // als fertig melden -> wartet auf Abnahme
       chime(); confetti();
       const rater = S.member(S.instance(t, i.date).rater);

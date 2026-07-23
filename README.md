@@ -40,7 +40,18 @@ sich aber jederzeit anpassen.
     Belohnung mit seinen Sternen; eingelöst wird der Wunsch von den Eltern
     (Shop → einlösen). Nach dem Kauf sagt die App klar: „Zeig das Mama
     oder Papa – sie machen es mit dir aus!"
+  - **Tageswahl** 🎁 – das Tages-Special dürfen sich die Kinder aussuchen
+    (wer zuerst wählt, bekommt seinen Wunsch; das andere geht ans Geschwisterkind)
+  - **Sanduhr** ⏳ im Fokus-Bildschirm: Wettlauf gegen den Sand (5 Minuten,
+    rein spielerisch – am Ende nur ein freundlicher Klang)
   - Lob auf **Beitrag & Anstrengung** („du hast geholfen!"), kein Scheitern-Frame
+- **Kinder-Abnahme ohne Sterne-Note** – Kinder-Arbeit wird nicht benotet:
+  Statt Sternen gibt es Lob-Bausteine für konkretes, anstrengungsbezogenes
+  Feedback („Ganz allein geschafft!"). Sterne gibt es nur unter Erwachsenen.
+- **Familienziel** 🎯 – gemeinsames Sparziel statt Rangliste: Alle Punkte der
+  Familie zählen zusammen auf ein Ziel (z. B. Zoo-Ausflug); Fortschritt als
+  Balken in der Heute-Ansicht und auf dem Kinder-Board. Festlegen in der
+  Heute-Ansicht.
 - **Klassisch & ausgefallen** – von „Spülmaschine ausräumen" bis „Krümel-Detektiv", „Familien-DJ" und „Licht-Wächter".
 - **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
 - **Urlaub & Vertretung** – freie Tage/Wochen eintragen; die App zeigt, welche

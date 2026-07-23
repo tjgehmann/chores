@@ -87,6 +87,32 @@
       }
     }
 
+    // Familien-Gemeinschaftsziel: gemeinsam sammeln statt gegeneinander
+    const goal = S.goal();
+    if (goal) {
+      const gp = S.goalProgress();
+      const gpct = Math.min(100, Math.round(gp / goal.target * 100));
+      const reached = gp >= goal.target;
+      const gcard = el(`<div class="goalcard ${reached ? 'reached' : ''}">
+        <div class="goalcard-head">🎯 Familienziel: ${goal.emoji} ${esc(goal.title)}
+          <button class="btn tiny g-edit" title="Ziel bearbeiten">✏️</button></div>
+        <div class="goal-bar"><span style="width:${gpct}%"></span></div>
+        <div class="subtle">${gp} / ${goal.target} ⭐ gemeinsam gesammelt${reached ? ' – <b>Geschafft! 🎉</b>' : ''}</div>
+        ${reached ? '<div class="goal-actions"><button class="btn primary g-done">🎉 Einlösen & neues Ziel</button></div>' : ''}
+      </div>`);
+      gcard.querySelector('.g-edit').addEventListener('click', () => UI.goalDialog(goal, ctx));
+      const doneBtn = gcard.querySelector('.g-done');
+      if (doneBtn) doneBtn.addEventListener('click', () =>
+        UI.confirm(`„${goal.title}" jetzt einlösen und das Ziel abschließen?`, () => {
+          S.clearGoal(); UI.goalDialog(null, ctx);
+        }, 'Ja, einlösen 🎉'));
+      wrap.appendChild(gcard);
+    } else {
+      const gnew = el('<div class="goalcard empty"><button class="btn" id="g-new">🎯 Familienziel festlegen</button><span class="subtle small">Gemeinsam auf etwas Schönes hinsparen – alle Punkte zählen zusammen.</span></div>');
+      gnew.querySelector('#g-new').addEventListener('click', () => UI.goalDialog(null, ctx));
+      wrap.appendChild(gnew);
+    }
+
     // Nach Mitglied gruppieren – jede Person bekommt ihre Spalte
     const lanes = el('<div class="lanes"></div>');
     S.members().forEach(m => {
@@ -393,6 +419,12 @@
       const waitTxt = waitDays >= 1
         ? (waitDays === 1 ? 'seit gestern' : `seit ${waitDays} Tagen`)
         : `seit ${Math.floor(waitMs / 3600000)} Std.`;
+      // Kinder-Arbeit wird nicht mit Sternen benotet – konkretes Lob
+      // auf die Anstrengung wirkt entwicklungspsychologisch besser.
+      const isKidWork = c.doneBy.length > 0 &&
+        c.doneBy.every(id => (S.member(id) || {}).kind === 'child');
+      const PRAISE = ['Ganz allein geschafft! 💪', 'Du hast an alles gedacht! 🌟',
+        'Richtig gründlich gemacht! 🔍', 'Das ging ja schnell! ⚡'];
       const item = el(`<div class="rateitem ${overdue ? 'overdue' : ''}" style="--cat:${(CAT[task.category] || {}).color || '#999'}">
         <div class="ri-head">
           <span class="ri-emoji">${task.emoji}</span>
@@ -404,7 +436,10 @@
         </div>
         <div class="ri-rater">🎲 Abnahme durch: <b style="color:${rater ? rater.color : '#333'}">${rater ? rater.emoji + ' ' + rater.name : 'jemand'}</b>
           <button class="btn tiny reroll">🎲 neu losen</button></div>
-        <div class="ri-stars">${[1,2,3,4,5].map(n => `<button class="ri-star" data-n="${n}">★</button>`).join('')}</div>
+        ${isKidWork
+          ? `<div class="ri-kidlob">💚 Kinder-Abnahme: keine Sterne-Note – lobe konkret, was gut war!</div>
+             <div class="ri-chips">${PRAISE.map(p => `<button type="button" class="ri-chip">${esc(p)}</button>`).join('')}</div>`
+          : `<div class="ri-stars">${[1,2,3,4,5].map(n => `<button class="ri-star" data-n="${n}">★</button>`).join('')}</div>`}
         <div class="ri-kind">
           <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}" value="praise" checked> 💚 Lob</label>
           <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}" value="tip"> 💡 Tipp zum Besser­machen</label>
@@ -416,12 +451,19 @@
         </div>
       </div>`);
 
-      let picked = 0;
+      // Kinder-Arbeit: intern volle Sterne (für Statistik), Knopf sofort aktiv
+      let picked = isKidWork ? 5 : 0;
+      if (isKidWork) item.querySelector('.ri-approve').disabled = false;
       const starBtns = item.querySelectorAll('.ri-star');
       const paint = () => starBtns.forEach((b, idx) => b.classList.toggle('on', idx < picked));
       starBtns.forEach((b, idx) => b.addEventListener('click', () => {
         picked = idx + 1; paint();
         item.querySelector('.ri-approve').disabled = false;
+      }));
+      // Lob-Bausteine: antippen füllt das Kommentarfeld
+      item.querySelectorAll('.ri-chip').forEach(chip => chip.addEventListener('click', () => {
+        const box = item.querySelector('.ri-comment');
+        box.value = (box.value ? box.value.trim() + ' ' : '') + chip.textContent;
       }));
       item.querySelector('.reroll').addEventListener('click', () => { S.reroll(c.taskId, c.date); ctx.render(); });
       item.querySelector('.ri-approve').addEventListener('click', () => {
@@ -916,6 +958,35 @@
             rarity: box.querySelector('.s-rarity').value,
           };
           if (isNew) S.addSticker(patch); else S.updateSticker(sk.id, patch);
+          close(); ctx.render();
+        });
+      }, { save: 'Speichern' });
+  };
+
+  /* =====================================================================
+     FAMILIENZIEL (gemeinsames Sparziel)
+     ===================================================================== */
+  UI.goalDialog = function (goal, ctx) {
+    const isNew = !goal;
+    goal = goal || { title: '', emoji: '🎡', target: 300 };
+    UI.modal(isNew ? 'Neues Familienziel' : 'Familienziel bearbeiten', `
+      <div class="tf">
+        <label>Worauf spart ihr?<input class="g-title" value="${esc(goal.title)}" placeholder="z. B. Zoo-Ausflug"></label>
+        <div class="tf-row">
+          <label class="tf-emoji">Zeichen<input class="g-emoji" value="${esc(goal.emoji)}" maxlength="4"></label>
+          <label>Ziel-Punkte<input type="number" class="g-target" value="${goal.target}" min="10" max="9999"></label>
+        </div>
+        <p class="subtle small">Alle abgenommenen Aufgaben der ganzen Familie zählen zusammen. Richtwert: Die Familie sammelt grob 150–250 Punkte pro Woche – ein Ziel von 300 dauert also etwa 1–2 Wochen.</p>
+      </div>`,
+      (box, close) => {
+        box.querySelector('.modal-save').addEventListener('click', () => {
+          const title = box.querySelector('.g-title').value.trim();
+          if (!title) { box.querySelector('.g-title').focus(); return; }
+          S.setGoal({
+            title,
+            emoji: box.querySelector('.g-emoji').value.trim() || '🎯',
+            target: box.querySelector('.g-target').value,
+          });
           close(); ctx.render();
         });
       }, { save: 'Speichern' });
