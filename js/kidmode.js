@@ -161,7 +161,7 @@
           : (new Date().getHours() >= 18 ? 'Bald ist Schlafenszeit – schaffst du noch einen? 🌙' : 'Tipp auf einen Job!'))}</div>
         <div class="kid-btnrow">
           <button class="kid-ask">🔊 Was muss ich heute machen?</button>
-          <button class="kid-stickers">🎁 Meine Sticker <span class="kid-stars">⭐ ${S.balance(m.id)}</span></button>
+          <button class="kid-stickers">🎁 Wünsche & Sticker <span class="kid-stars">⭐ ${S.balance(m.id)}</span></button>
         </div>
       </div>
 
@@ -287,21 +287,56 @@
     const balance = S.balance(m.id);
     const owned = S.stickerCollection(m.id);
     const ownedCount = Object.values(owned).reduce((a, b) => a + b, 0);
+    const openWishes = S.rewardPurchases(m.id).filter(p => p.status === 'open');
 
     overlay.innerHTML = '';
     const scr = el(`<div class="kid-screen kid-stickshop" style="--c:${m.color}">
       <div class="kid-top">
         <button class="kid-back-board" title="zurück">↩︎</button>
-        <div class="kid-me"><span class="kid-me-avatar">${m.emoji}</span><span class="kid-me-name">Deine Sticker</span></div>
+        <div class="kid-me"><span class="kid-me-avatar">${m.emoji}</span><span class="kid-me-name">Sticker & Wünsche</span></div>
         <div class="kid-balance" title="deine Sterne">⭐ ${balance}</div>
       </div>
-      <div class="kid-stick-sub">${ownedCount
-        ? `Du hast schon <b>${ownedCount}</b> Sticker im Album! 🎉`
-        : 'Sammle Sterne und tausche sie gegen Sticker!'}</div>
-      <div class="kid-stick-grid"></div>
+      <div class="kid-shop-scroll">
+        <div class="kid-shop-sec-head">🎁 Wünsch dir was</div>
+        ${openWishes.length ? `<div class="kid-wish-open">⏳ ${openWishes.length === 1
+          ? 'Ein Wunsch wartet' : openWishes.length + ' Wünsche warten'} noch auf Mama & Papa!</div>` : ''}
+        <div class="kid-wish-list"></div>
+        <div class="kid-shop-sec-head">⭐ Deine Sticker${ownedCount
+          ? ` <span class="kid-sec-count">${ownedCount} im Album 🎉</span>` : ''}</div>
+        <div class="kid-stick-grid"></div>
+      </div>
     </div>`);
 
     scr.querySelector('.kid-back-board').addEventListener('click', () => renderBoard());
+
+    // Echte Belohnungen: Das Kind „wünscht" sie sich mit seinen Sternen –
+    // eingelöst wird der Wunsch von den Eltern (Shop: „gekauft" -> einlösen).
+    const wishList = scr.querySelector('.kid-wish-list');
+    S.rewards()
+      .filter(r => r.group === 'child' || r.group === 'all')
+      .sort((a, b) => a.cost - b.cost)
+      .forEach(rw => {
+        const affordable = balance >= rw.cost;
+        const wished = openWishes.some(p => p.refId === rw.id);
+        const card = el(`<button class="kid-wish ${affordable ? '' : 'locked'}">
+          <span class="kid-wish-emoji">${rw.emoji}</span>
+          <span class="kid-wish-main">
+            <span class="kid-wish-title">${esc(rw.title)}</span>
+            ${wished ? '<span class="kid-wish-flag">⏳ schon gewünscht</span>' : ''}
+          </span>
+          <span class="kid-stick-cost">⭐ ${rw.cost}</span>
+        </button>`);
+        card.addEventListener('click', () => {
+          if (!affordable) {
+            speak(`${rw.title}. Dafür brauchst du noch ${rw.cost - balance} Sterne. Weiter so!`);
+            card.classList.remove('shake'); void card.offsetWidth;
+            card.classList.add('shake');
+            return;
+          }
+          confirmWish(m, rw);
+        });
+        wishList.appendChild(card);
+      });
 
     const grid = scr.querySelector('.kid-stick-grid');
     S.stickers().forEach(sk => {
@@ -327,6 +362,40 @@
     });
 
     overlay.appendChild(scr);
+  }
+
+  // Wunsch-Kauf: kaufen -> Übergabe an die Eltern deutlich machen
+  function confirmWish(m, rw) {
+    const ask = el(`<div class="kid-ask-overlay">
+      <div class="kid-ask-card" style="--c:${m.color}">
+        <div class="kid-buy-emoji">${rw.emoji}</div>
+        <div class="kid-ask-title">${esc(rw.title)}</div>
+        ${rw.description ? `<div class="kid-wish-desc">${esc(rw.description)}</div>` : ''}
+        <div class="kid-wish-cost">Für ⭐ ${rw.cost} wünschen?</div>
+        <div class="kid-buy-btns">
+          <button class="kid-buy-yes">Ja! 🎉</button>
+          <button class="kid-buy-no">Lieber nicht</button>
+        </div>
+      </div>
+    </div>`);
+    ask.querySelector('.kid-buy-no').addEventListener('click', () => ask.remove());
+    ask.addEventListener('click', (e) => { if (e.target === ask) ask.remove(); });
+    ask.querySelector('.kid-buy-yes').addEventListener('click', () => {
+      const res = S.buy(m.id, 'reward', rw.id);
+      if (!res.ok) { ask.remove(); speak('Das hat leider nicht geklappt.'); return; }
+      chime(); confetti();
+      // Die App verspricht nichts, was sie nicht halten kann:
+      // Die Einlösung übernehmen die Eltern (Shop -> einlösen).
+      ask.querySelector('.kid-ask-card').innerHTML = `
+        <div class="kid-buy-emoji">${rw.emoji}</div>
+        <div class="kid-ask-title">Juhu! Dein Wunsch ist gekauft! 🎉</div>
+        <div class="kid-wish-handoff">👉 Zeig das Mama oder Papa –<br>sie machen es mit dir aus!</div>
+        <div class="kid-buy-btns"><button class="kid-buy-yes wish-ok">Mach ich! 👍</button></div>`;
+      ask.querySelector('.wish-ok').addEventListener('click', () => { ask.remove(); renderStickers(); });
+      speak('Juhu! Dein Wunsch ist gekauft. Zeig das Mama oder Papa, sie machen es mit dir aus!');
+    });
+    overlay.appendChild(ask);
+    speak(`Möchtest du dir ${rw.title} für ${rw.cost} Sterne wünschen?`);
   }
 
   // Großer Ja/Nein-Dialog vor dem Kauf (mit Vorlesen)

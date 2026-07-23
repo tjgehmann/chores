@@ -35,8 +35,11 @@ sich aber jederzeit anpassen.
   - großer **„Fertig!"-Knopf** mit **Konfetti + Jubel-Klang**
   - Fortschritt als sich füllendes **Belohnungsglas** (statt abstrakter Zahlen);
     füllt sich hell schon beim Melden, kräftig nach der Abnahme
-  - **„Meine Sticker"** 🎁 – Sterne-Guthaben und Sticker-Album direkt im
-    Kinder-Modus: Sticker ansehen, vorlesen lassen und selbst kaufen
+  - **„Wünsche & Sticker"** 🎁 – Sterne-Guthaben, Sticker-Album und echte
+    Belohnungen direkt im Kinder-Modus: Das Kind „wünscht" sich eine
+    Belohnung mit seinen Sternen; eingelöst wird der Wunsch von den Eltern
+    (Shop → einlösen). Nach dem Kauf sagt die App klar: „Zeig das Mama
+    oder Papa – sie machen es mit dir aus!"
   - Lob auf **Beitrag & Anstrengung** („du hast geholfen!"), kein Scheitern-Frame
 - **Klassisch & ausgefallen** – von „Spülmaschine ausräumen" bis „Krümel-Detektiv", „Familien-DJ" und „Licht-Wächter".
 - **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
