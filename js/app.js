@@ -86,6 +86,7 @@
     syncing: ['🔄', 'Synchronisiert …'],
     offline: ['📴', 'Offline – Änderungen werden nachgereicht, sobald wieder Netz da ist'],
     error:   ['⚠️', 'Cloud nicht erreichbar – Daten sind lokal gesichert (Tabelle eingerichtet? Siehe README)'],
+    login:   ['🔑', 'Cloud-Anmeldung nötig – hier tippen: Einstellungen → Cloud-Anmeldung'],
   };
   function updateCloudInd(s) {
     const ind = document.getElementById('cloud-ind');
@@ -127,6 +128,9 @@
         </div>
         <p class="subtle small" id="cloudtest-result"></p>
         <hr>
+        <div class="fam-manage-head">🔑 Cloud-Anmeldung</div>
+        <div id="auth-box"></div>
+        <hr>
         <div class="fam-manage-head">👨‍👩‍👧‍👦 Familie</div>
         <p class="subtle small">Mitglieder hinzufügen, bearbeiten oder entfernen.</p>
         <div id="fam-list"></div>
@@ -147,6 +151,40 @@
           updateBackupDot();
         });
         UI.renderFamilyManager(box.querySelector('#fam-list'), () => { buildChrome(); render(); });
+
+        // Cloud-Anmeldung: einmal pro Gerät mit dem Familien-Konto einloggen
+        const authBox = box.querySelector('#auth-box');
+        const paintAuth = () => {
+          if (!CHORES.cloud || !CHORES.cloud.configured) {
+            authBox.innerHTML = '<p class="subtle small">Cloud ist nicht konfiguriert (js/cloud.js).</p>';
+            return;
+          }
+          if (CHORES.cloud.loggedIn()) {
+            authBox.innerHTML = `
+              <p class="subtle small">✅ Dieses Gerät ist angemeldet${CHORES.cloud.authEmail() ? ` als <b>${CHORES.cloud.authEmail()}</b>` : ''} und synchronisiert mit eurer Cloud.</p>
+              <button class="btn" id="auth-logout">Abmelden</button>`;
+            authBox.querySelector('#auth-logout').addEventListener('click', () => { CHORES.cloud.logout(); paintAuth(); });
+          } else {
+            authBox.innerHTML = `
+              <p class="subtle small">Einmal pro Gerät mit dem Familien-Konto anmelden – erst dann kann dieses Gerät die Cloud-Daten lesen und schreiben. Bis dahin arbeitet die App lokal weiter.</p>
+              <div class="auth-form">
+                <input type="email" id="auth-email" placeholder="E-Mail" autocomplete="username">
+                <input type="password" id="auth-pass" placeholder="Passwort" autocomplete="current-password">
+                <button class="btn primary" id="auth-login">Anmelden</button>
+              </div>
+              <p class="subtle small" id="auth-msg"></p>`;
+            authBox.querySelector('#auth-login').addEventListener('click', async () => {
+              const msgEl = authBox.querySelector('#auth-msg');
+              msgEl.textContent = 'Melde an …';
+              const r = await CHORES.cloud.login(
+                authBox.querySelector('#auth-email').value.trim(),
+                authBox.querySelector('#auth-pass').value);
+              if (r.ok) paintAuth();
+              else msgEl.innerHTML = '❌ ' + r.msg;
+            });
+          }
+        };
+        paintAuth();
         box.querySelector('#set-cloudtest').addEventListener('click', async () => {
           const out = box.querySelector('#cloudtest-result');
           out.textContent = 'Prüfe Verbindung …';
@@ -178,6 +216,7 @@
     // auch bei Cloud-Updates erneut und würde Handler verdoppeln)
     document.getElementById('menu-btn').addEventListener('click', openMenu);
     document.getElementById('user-btn').addEventListener('click', () => CHORES.start.show());
+    document.getElementById('cloud-ind').addEventListener('click', openMenu); // z. B. bei 🔑 direkt zur Anmeldung
     buildChrome();
     render();
     CHORES.start.show(); // Erst auswählen, wer man ist (Toni, Leo oder Eltern)

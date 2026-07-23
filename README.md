@@ -67,29 +67,47 @@ lädt Änderungen automatisch nach, sobald wieder Verbindung besteht. Das
 Wolken-Symbol ☁️ oben rechts zeigt den Sync-Status (🔄 lädt, 📴 offline,
 ⚠️ Fehler).
 
-**Einmalige Einrichtung** – im Supabase-Dashboard unter **SQL Editor** dieses
-Skript ausführen (legt die Tabelle an und erlaubt der App den Zugriff):
+Der Zugriff ist durch ein **Familien-Login** geschützt: Nur angemeldete
+Geräte können die Daten lesen und schreiben. Jedes Gerät meldet sich einmal
+an (⚙️ → „Cloud-Anmeldung") und behält die Sitzung dauerhaft – die Kinder
+merken davon nichts.
+
+**Einmalige Einrichtung** im Supabase-Dashboard:
+
+1. **SQL Editor** → dieses Skript ausführen (legt die Tabelle an und
+   beschränkt den Zugriff auf angemeldete Benutzer):
 
 ```sql
-create table public.dashboard (
+create table if not exists public.dashboard (
   id text primary key,
   data jsonb not null,
   updated_at timestamptz not null default now()
 );
 
 alter table public.dashboard enable row level security;
-create policy "dashboard lesen"   on public.dashboard for select using (true);
-create policy "dashboard anlegen" on public.dashboard for insert with check (true);
-create policy "dashboard aendern" on public.dashboard for update using (true) with check (true);
+
+-- Falls vorhanden: alte, offene Richtlinien entfernen
+drop policy if exists "dashboard lesen"   on public.dashboard;
+drop policy if exists "dashboard anlegen" on public.dashboard;
+drop policy if exists "dashboard aendern" on public.dashboard;
+
+-- Zugriff nur für angemeldete Benutzer (das Familien-Konto)
+create policy "familie lesen"   on public.dashboard for select to authenticated using (true);
+create policy "familie anlegen" on public.dashboard for insert to authenticated with check (true);
+create policy "familie aendern" on public.dashboard for update to authenticated using (true) with check (true);
 ```
 
-Projekt-URL und Publishable-Key stehen in `js/cloud.js` (`SUPABASE_URL`,
-`SUPABASE_KEY`).
+2. **Familien-Konto anlegen:** *Authentication → Users → „Add user"* –
+   eine E-Mail-Adresse und ein starkes Passwort, dabei **„Auto Confirm
+   User"** anhaken. Dieses eine Konto nutzt die ganze Familie.
+3. **Registrierung abschalten (wichtig!):** *Authentication → Sign In / Sign Up*
+   → **„Allow new users to sign up" deaktivieren.** Sonst könnte sich jeder
+   Fremde selbst ein Konto anlegen und wäre damit „angemeldet".
 
-> **Hinweis:** Der Publishable-Key ist für den Browser gedacht und darf im
-> Code stehen. Die Richtlinien oben erlauben aber jedem, der URL + Key kennt,
-> Lese-/Schreibzugriff auf diese eine Tabelle – für ein Familien-Board mit
-> Vornamen und Aufgaben in Ordnung, sensible Daten gehören hier nicht hinein.
+Projekt-URL und Publishable-Key stehen in `js/cloud.js` (`SUPABASE_URL`,
+`SUPABASE_KEY`). Der Publishable-Key ist für den Browser gedacht und darf
+öffentlich im Code stehen – die eigentliche Zugriffskontrolle übernehmen
+Login + RLS-Richtlinien.
 
 ## 📱 Auf dem iPad einrichten
 
@@ -141,8 +159,9 @@ nutzen und anpassen. Jede Familie betreibt dabei ihre **eigene** Instanz mit
 
 1. **Repo forken** (GitHub: „Fork") oder herunterladen.
 2. **Eigenes Supabase-Projekt anlegen** (kostenloses Konto auf supabase.com
-   reicht) und im **SQL Editor** das Skript aus dem Abschnitt
-   „Cloud-Speicherung" oben ausführen.
+   reicht) und die drei Einrichtungs-Schritte aus dem Abschnitt
+   „Cloud-Speicherung" oben ausführen (SQL, Familien-Konto anlegen,
+   Registrierung abschalten).
 3. In `js/cloud.js` die eigenen Werte eintragen: `SUPABASE_URL`
    (Projekt-URL) und `SUPABASE_KEY` (Publishable/Anon-Key, beides unter
    *Settings → API*).

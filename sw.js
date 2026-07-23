@@ -1,7 +1,7 @@
 /* Familien-Dashboard – Service Worker
    Ermöglicht Offline-Nutzung: die App-Dateien werden gecacht.
    Bei jeder Änderung an den Dateien die CACHE-Version hochzählen. */
-const CACHE = 'familien-dashboard-v15';
+const CACHE = 'familien-dashboard-v16';
 const ASSETS = [
   './',
   './index.html',
