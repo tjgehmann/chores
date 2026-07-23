@@ -77,8 +77,6 @@
     family.innerHTML = S.members().map(m =>
       `<span class="fam" style="--c:${m.color}">${m.emoji} ${m.short}</span>`).join('');
 
-    document.getElementById('menu-btn').addEventListener('click', openMenu);
-    document.getElementById('user-btn').addEventListener('click', () => CHORES.start.show());
     updateBackupDot();
   }
 
@@ -129,6 +127,10 @@
         </div>
         <p class="subtle small" id="cloudtest-result"></p>
         <hr>
+        <div class="fam-manage-head">👨‍👩‍👧‍👦 Familie</div>
+        <p class="subtle small">Mitglieder hinzufügen, bearbeiten oder entfernen.</p>
+        <div id="fam-list"></div>
+        <hr>
         <button class="btn danger" id="set-reset">♻️ Auf Standard zurücksetzen</button>
         <p class="subtle small">Setzt Aufgaben, Erledigungen, Bewertungen und Urlaube zurück.</p>
         <input type="file" id="import-file" accept="application/json" style="display:none">
@@ -144,6 +146,7 @@
           box.querySelector('#backup-info').innerHTML = backupLine();
           updateBackupDot();
         });
+        UI.renderFamilyManager(box.querySelector('#fam-list'), () => { buildChrome(); render(); });
         box.querySelector('#set-cloudtest').addEventListener('click', async () => {
           const out = box.querySelector('#cloudtest-result');
           out.textContent = 'Prüfe Verbindung …';
@@ -171,6 +174,10 @@
   function init() {
     S.load();
     CHORES.ctx = ctx;   // für den Kinder-Modus, um danach aufzufrischen
+    // Statische Kopfzeilen-Knöpfe nur EINMAL binden (buildChrome läuft
+    // auch bei Cloud-Updates erneut und würde Handler verdoppeln)
+    document.getElementById('menu-btn').addEventListener('click', openMenu);
+    document.getElementById('user-btn').addEventListener('click', () => CHORES.start.show());
     buildChrome();
     render();
     CHORES.start.show(); // Erst auswählen, wer man ist (Toni, Leo oder Eltern)

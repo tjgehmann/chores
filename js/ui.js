@@ -921,6 +921,75 @@
       }, { save: 'Speichern' });
   };
 
+  /* =====================================================================
+     FAMILIE VERWALTEN (im Einstellungs-Menü)
+     ===================================================================== */
+  UI.memberDialog = function (m, onDone) {
+    const isNew = !m;
+    m = m || { name: '', short: '', emoji: '🙂', color: '#6c5ce7', kind: 'child' };
+    UI.modal(isNew ? 'Neues Familienmitglied' : 'Mitglied bearbeiten', `
+      <div class="tf">
+        <label>Name<input class="m-name" value="${esc(m.name)}" placeholder="z. B. Oma Karin"></label>
+        <div class="tf-row">
+          <label>Kurzname<input class="m-short" value="${esc(m.short)}" placeholder="z. B. Oma"></label>
+          <label class="tf-emoji">Zeichen<input class="m-emoji" value="${esc(m.emoji)}" maxlength="4"></label>
+        </div>
+        <div class="tf-row">
+          <label>Farbe<input type="color" class="m-color" value="${esc(m.color)}"></label>
+          <label>Rolle<select class="m-kind">
+            <option value="child" ${m.kind === 'child' ? 'selected' : ''}>🧒 Kind</option>
+            <option value="adult" ${m.kind === 'adult' ? 'selected' : ''}>🧑 Erwachsene/r</option>
+          </select></label>
+        </div>
+        <p class="subtle small">Kinder erscheinen als eigene Kachel auf dem Start-Bildschirm und im Kinder-Modus. Aufgaben bekommt die Person über den Reiter „Aufgaben" (Zuständig antippen).</p>
+      </div>`,
+      (box, close) => {
+        box.querySelector('.modal-save').addEventListener('click', () => {
+          const name = box.querySelector('.m-name').value.trim();
+          if (!name) { box.querySelector('.m-name').focus(); return; }
+          const patch = {
+            name,
+            short: box.querySelector('.m-short').value.trim() || name.split(' ')[0],
+            emoji: box.querySelector('.m-emoji').value.trim() || '🙂',
+            color: box.querySelector('.m-color').value,
+            kind: box.querySelector('.m-kind').value,
+          };
+          if (isNew) S.addMember(patch); else S.updateMember(m.id, patch);
+          close();
+          if (onDone) onDone();
+        });
+      }, { save: 'Speichern' });
+  };
+
+  UI.renderFamilyManager = function (container, onChanged) {
+    const changed = () => { paint(); if (onChanged) onChanged(); };
+    const paint = () => {
+      container.innerHTML = '';
+      S.members().forEach(m => {
+        const row = el(`<div class="fam-row" style="--c:${m.color}">
+          <span class="fam-row-emoji">${m.emoji}</span>
+          <span class="fam-row-name">${esc(m.name)}
+            <span class="subtle small">${esc(m.short)} · ${m.kind === 'child' ? 'Kind' : 'Erwachsene/r'}</span></span>
+          <button class="btn tiny fam-edit" title="Bearbeiten">✏️</button>
+          <button class="btn tiny danger fam-del" title="Löschen">🗑</button>
+        </div>`);
+        row.querySelector('.fam-edit').addEventListener('click', () => UI.memberDialog(m, changed));
+        row.querySelector('.fam-del').addEventListener('click', () => {
+          if (S.members().length <= 1) { UI.toast('Die letzte Person kann nicht gelöscht werden.'); return; }
+          UI.confirm(`${m.emoji} ${m.name} wirklich entfernen? Punkte und Verlauf bleiben gespeichert; Aufgaben, die nur ${esc(m.short)} gehörten, werden pausiert.`, () => {
+            S.removeMember(m.id);
+            changed();
+          }, 'Ja, entfernen');
+        });
+        container.appendChild(row);
+      });
+      const add = el('<button class="btn fam-add">➕ Mitglied hinzufügen</button>');
+      add.addEventListener('click', () => UI.memberDialog(null, changed));
+      container.appendChild(add);
+    };
+    paint();
+  };
+
   // Kleine, kurz eingeblendete Rückmeldung
   UI.toast = function (msg) {
     const t = el(`<div class="toast">${esc(msg)}</div>`);

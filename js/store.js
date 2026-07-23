@@ -220,6 +220,53 @@
     members() { return state.members; },
     member(id) { return state.members.find(m => m.id === id); },
 
+    addMember({ name, short, emoji, color, kind }) {
+      const m = {
+        id: 'm_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        name: (name || '').trim(),
+        short: (short || name || '').trim(),
+        emoji: emoji || '🙂',
+        color: color || '#6c5ce7',
+        kind: kind === 'adult' ? 'adult' : 'child',
+      };
+      state.members.push(m);
+      S.save();
+      return m;
+    },
+
+    updateMember(id, patch) {
+      const m = S.member(id);
+      if (m) { Object.assign(m, patch); S.save(); }
+      return m;
+    },
+
+    // Mitglied entfernen. Punkte/Verlauf bleiben gespeichert; aufgeräumt
+    // werden Zuständigkeiten, Rotations-Pools, offene Abnahmen und Urlaube.
+    // Aufgaben, für die danach niemand mehr zuständig ist, werden pausiert
+    // (wöchentlich ohne Tage) statt gelöscht.
+    removeMember(id) {
+      if (state.members.length <= 1) return false; // die letzte Person bleibt
+      state.members = state.members.filter(m => m.id !== id);
+      state.tasks.forEach(t => {
+        if (t.assignees) t.assignees = t.assignees.filter(a => a !== id);
+        if (t.rotationPool) {
+          t.rotationPool = t.rotationPool.filter(a => a !== id);
+          if (!t.rotationPool.length) delete t.rotationPool; // zurück auf Gruppen-Pool
+        }
+        const pool = t.rotate ? S.rotationPool(t) : [];
+        if (t.assignees && !t.assignees.length && !pool.length) {
+          t.frequency = 'weekly'; t.days = [];
+        }
+      });
+      // Offene Abnahmen, die diese Person prüfen sollte, neu auslosen
+      Object.values(state.completions).forEach(c => {
+        if (c.status === 'pending' && c.rater === id) c.rater = S.pickRandomRater(c.doneBy || []);
+      });
+      state.vacations = (state.vacations || []).filter(v => v.member !== id);
+      S.save();
+      return true;
+    },
+
     /* ----------------------------- Aufgaben ------------------------------ */
     tasks() { return state.tasks; },
     task(id) { return state.tasks.find(t => t.id === id); },

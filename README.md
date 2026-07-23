@@ -118,7 +118,10 @@ python3 -m http.server 8000
 ## 🛠️ Anpassen
 
 - **Aufgaben** ändern, hinzufügen oder löschen: Reiter **Aufgaben** in der App.
-- **Familienmitglieder** (Namen, Emojis, Farben): in `js/data.js` unter `MEMBERS`.
+- **Familienmitglieder** hinzufügen, bearbeiten oder entfernen: Zahnrad ⚙️ →
+  Abschnitt „Familie". Beim Entfernen bleiben Punkte und Verlauf erhalten;
+  Aufgaben, die nur dieser Person gehörten, werden pausiert. (Der
+  Startbestand für neue Installationen steht in `js/data.js` unter `MEMBERS`.)
 - **Standard-Aufgabenkatalog**: in `js/data.js` unter `DEFAULT_TASKS`.
 - **Daten sichern / übertragen**: Zahnrad ⚙️ oben rechts → Sichern / Einlesen
   (JSON-Datei). So lassen sich die Daten z. B. auf ein anderes Gerät bringen.
