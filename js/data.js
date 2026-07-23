@@ -242,6 +242,25 @@
         description: 'Ein gemeinsamer Ausflug nach Wahl.' }),
   ];
 
+  /* -----------------------------------------------------------------------
+     NACHTRAG – Erlebnis-Belohnungen (gemeinsame Zeit statt Zeug):
+     entwicklungspsychologisch die beste Belohnungs-Kategorie für Kinder.
+     Bestehende Speicherstände bekommen sie über eine Migration (store.js).
+     ----------------------------------------------------------------------- */
+  CHORES.REWARDS_UPDATE_1 = [
+    r({ title: 'Du bestimmst das Wochenend-Frühstück', emoji: '🥞', cost: 60, group: 'child',
+        description: 'Pancakes? Brötchen? Müsli-Bar? Am Wochenende entscheidest du!' }),
+    r({ title: 'Chefkoch-Helfer beim Abendessen', emoji: '👨‍🍳', cost: 70, group: 'child',
+        description: 'Du hilfst beim Kochen mit Schürze und allem Drum und Dran.' }),
+    r({ title: 'Picknick im Wohnzimmer', emoji: '🧺', cost: 100, group: 'child',
+        description: 'Decke auf den Boden, Snacks drauf – Picknick mitten in der Wohnung.' }),
+    r({ title: 'Exklusiv-Stunde: nur du + Mama oder Papa', emoji: '⏰', cost: 130, group: 'child',
+        description: 'Eine Stunde nur für dich – du suchst aus, was ihr zwei macht.' }),
+    r({ title: 'Nachtwanderung mit Taschenlampe', emoji: '🔦', cost: 150, group: 'child',
+        description: 'Wenn es dunkel ist: kleine Runde draußen mit deiner Taschenlampe.' }),
+  ];
+  CHORES.DEFAULT_REWARDS = CHORES.DEFAULT_REWARDS.concat(CHORES.REWARDS_UPDATE_1);
+
   /* =======================================================================
      STICKER – digitale Sammel-Sticker fürs Album.
      rarity: 'common' | 'rare' | 'legendary'

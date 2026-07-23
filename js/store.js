@@ -75,7 +75,7 @@
       },
       // Käufe/Einlösungen: [{ id, member, type, refId, title, emoji, cost, at, status }]
       purchases: [],
-      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true }, // frische Installation: alles aktuell
+      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -163,6 +163,15 @@
         });
 
         state.migrations.rebalanceV1 = true;
+        S.save();
+      }
+      if (!state.migrations.rewardsV1) {
+        // Erlebnis-Belohnungen (gemeinsame Zeit) in bestehende Stände übernehmen
+        const have = new Set(state.shop.rewards.map(r => r.title));
+        (CHORES.REWARDS_UPDATE_1 || []).forEach(r => {
+          if (!have.has(r.title)) state.shop.rewards.push(JSON.parse(JSON.stringify(r)));
+        });
+        state.migrations.rewardsV1 = true;
         S.save();
       }
       if (!state.migrations.workflowV1) {
