@@ -133,6 +133,30 @@ python3 -m http.server 8000
   den Browser um dauerhaften Speicher (`navigator.storage.persist()`), damit
   die Daten nicht bei Platzmangel aufgeräumt werden.
 
+## 🚀 Selbst betreiben (für andere Familien)
+
+Dieses Projekt ist quelloffen ([MIT-Lizenz](LICENSE)) – du darfst es frei
+nutzen und anpassen. Jede Familie betreibt dabei ihre **eigene** Instanz mit
+**eigener** Datenbank; die Daten verschiedener Familien berühren sich nie.
+
+1. **Repo forken** (GitHub: „Fork") oder herunterladen.
+2. **Eigenes Supabase-Projekt anlegen** (kostenloses Konto auf supabase.com
+   reicht) und im **SQL Editor** das Skript aus dem Abschnitt
+   „Cloud-Speicherung" oben ausführen.
+3. In `js/cloud.js` die eigenen Werte eintragen: `SUPABASE_URL`
+   (Projekt-URL) und `SUPABASE_KEY` (Publishable/Anon-Key, beides unter
+   *Settings → API*).
+4. **Familie anpassen:** Mitglieder über ⚙️ → „Familie" in der App pflegen;
+   der Startbestand (Namen/Emojis beim allerersten Start) steht in
+   `js/data.js` unter `MEMBERS`, der Aufgaben-Katalog darunter.
+5. **GitHub Pages aktivieren:** Repo-Einstellungen → Pages → Branch `main`
+   auswählen. Danach die Pages-Adresse auf dem iPad öffnen und über
+   **Teilen → „Zum Home-Bildschirm"** installieren.
+
+> Ohne Supabase läuft die App übrigens auch – dann bleiben die Daten rein
+> lokal auf dem Gerät (das ☁️-Symbol zeigt einen Fehler, alles andere
+> funktioniert normal).
+
 ## 🗂️ Projektaufbau
 
 ```
