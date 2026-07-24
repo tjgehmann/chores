@@ -8,6 +8,24 @@ zum Familienleben zu leisten.
 Gebaut für **Mama, Papa, Antonia (Toni, 4)** und **Leonard (Leo, 4)** – lässt
 sich aber jederzeit anpassen.
 
+## 📸 Screenshots
+
+| Start: Wer bist du? | Kinder-Board |
+|---|---|
+| ![Start-Bildschirm mit Auswahl-Kacheln für Toni, Leo und Eltern](docs/screenshots/01-start.png) | ![Kinder-Board mit Belohnungsglas, Familienziel und Aufgaben-Spalten](docs/screenshots/02-kinder-board.png) |
+
+| Fokus mit Sanduhr | Wünsche & Sticker |
+|---|---|
+| ![Fokus-Bildschirm mit einer Aufgabe, Vorlesen und laufender Sanduhr](docs/screenshots/03-fokus-sanduhr.png) | ![Wünsche und Sticker: echte Belohnungen und Sammel-Sticker gegen Sterne](docs/screenshots/04-wuensche-sticker.png) |
+
+| Eltern-Sperre | Heute-Ansicht (Eltern) |
+|---|---|
+| ![Eltern-Check: kleine Rechenaufgabe schützt die Eltern-Ansicht](docs/screenshots/05-eltern-sperre.png) | ![Heute-Ansicht mit Familienziel und Spalten pro Familienmitglied](docs/screenshots/06-heute.png) |
+
+| Abnahme mit Lob-Bausteinen | |
+|---|---|
+| ![Abnahme-Ansicht: Kinder-Arbeit ohne Sterne-Note, mit konkreten Lob-Bausteinen](docs/screenshots/07-abnahme.png) | |
+
 ## ✨ Funktionen
 
 - **Start-Bildschirm „Wer bist du?"** – beim Öffnen wählt jeder sich selbst:
