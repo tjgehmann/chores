@@ -341,9 +341,9 @@
       speak(t.title + '. ' + (t.description || '') + (i.rejected && i.rejection && i.rejection.reason ? ' Nochmal: ' + i.rejection.reason : '')));
     focus.querySelector('.kid-done-btn').addEventListener('click', () => {
       stopTimer();
-      S.submit(t.id, i.date);   // als fertig melden -> wartet auf Abnahme
+      S.submit(t.id, i.date, i.member);   // als fertig melden -> wartet auf Abnahme
       chime(); confetti();
-      const rater = S.member(S.instance(t, i.date).rater);
+      const rater = S.member(S.instance(t, i.date, i.member).rater);
       const yay = el(`<div class="kid-yay">
         <div class="kid-yay-avatar">${(S.member(state.child) || {}).emoji || '🎉'}</div>
         <div class="kid-yay-text">Toll gemeldet! 🎉</div>

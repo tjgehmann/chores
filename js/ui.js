@@ -179,7 +179,7 @@
     </div>`);
 
     card.querySelector('.check').addEventListener('click', () => {
-      S.toggleDone(t.id, i.date); ctx.render();
+      S.toggleDone(t.id, i.date, i.member); ctx.render();
     });
     const cb = card.querySelector('.cover-btn');
     if (cb) cb.addEventListener('click', () => UI.coverDialog(i, ctx));
@@ -239,7 +239,7 @@
           <span class="wpill-title">${esc(i.task.title)}</span>
           <span class="wpill-who">${i.rotates ? '🔄' : ''}${i.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
         </button>`);
-        pill.addEventListener('click', () => { S.toggleDone(i.task.id, iso); ctx.render(); });
+        pill.addEventListener('click', () => { S.toggleDone(i.task.id, iso, i.member); ctx.render(); });
         list.appendChild(pill);
       });
       col.querySelector('.wday-head').addEventListener('click', () => { ctx.setDate(iso); ctx.go('today'); });
@@ -441,8 +441,8 @@
              <div class="ri-chips">${PRAISE.map(p => `<button type="button" class="ri-chip">${esc(p)}</button>`).join('')}</div>`
           : `<div class="ri-stars">${[1,2,3,4,5].map(n => `<button class="ri-star" data-n="${n}">★</button>`).join('')}</div>`}
         <div class="ri-kind">
-          <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}" value="praise" checked> 💚 Lob</label>
-          <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}" value="tip"> 💡 Tipp zum Besser­machen</label>
+          <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}_${c.member || ''}" value="praise" checked> 💚 Lob</label>
+          <label class="pick"><input type="radio" name="kind_${c.taskId}_${c.date}_${c.member || ''}" value="tip"> 💡 Tipp zum Besser­machen</label>
         </div>
         <textarea class="ri-comment" rows="2" placeholder="Feedback – beim Annehmen ein Lob, beim Zurückgeben der Grund (z. B. „Unter dem Bett liegt noch Spielzeug.“)"></textarea>
         <div class="ri-actions">
@@ -465,12 +465,12 @@
         const box = item.querySelector('.ri-comment');
         box.value = (box.value ? box.value.trim() + ' ' : '') + chip.textContent;
       }));
-      item.querySelector('.reroll').addEventListener('click', () => { S.reroll(c.taskId, c.date); ctx.render(); });
+      item.querySelector('.reroll').addEventListener('click', () => { S.reroll(c.taskId, c.date, c.member); ctx.render(); });
       item.querySelector('.ri-approve').addEventListener('click', () => {
         if (!picked) return;
-        const kind = item.querySelector(`input[name="kind_${c.taskId}_${c.date}"]:checked`).value;
+        const kind = item.querySelector(`input[name="kind_${c.taskId}_${c.date}_${c.member || ''}"]:checked`).value;
         S.approve(c.taskId, c.date, {
-          by: c.rater, stars: picked,
+          by: c.rater, stars: picked, member: c.member,
           comment: item.querySelector('.ri-comment').value, kind,
         });
         ctx.render();
@@ -483,7 +483,7 @@
           item.querySelector('.ri-comment').focus();
           return;
         }
-        S.reject(c.taskId, c.date, { by: c.rater, reason });
+        S.reject(c.taskId, c.date, { by: c.rater, reason, member: c.member });
         ctx.render();
       });
       list.appendChild(item);
@@ -568,7 +568,7 @@
         `<button class="picker" data-id="${m.id}" style="--c:${m.color}">${m.emoji} ${esc(m.name)}</button>`).join('')}</div>`,
       (box, close) => {
         box.querySelectorAll('.picker').forEach(b => b.addEventListener('click', () => {
-          S.setCover(i.task.id, i.date, [b.dataset.id]);
+          S.setCover(i.task.id, i.date, [b.dataset.id], i.member);
           close(); ctx.render();
         }));
       });
@@ -661,6 +661,7 @@
         <div class="t-mday-wrap" style="display:none">Tag im Monat <input type="number" class="t-mday" value="${task.dayOfMonth || 1}" min="1" max="28"></div>
         <label class="t-rotwrap"><input type="checkbox" class="t-rotate" ${task.rotate ? 'checked' : ''}> 🔄 Wöchentlich rotieren (reihum abwechseln)</label>
         <div class="t-rothint subtle small"></div>
+        <label class="t-rotwrap"><input type="checkbox" class="t-individual" ${task.individual ? 'checked' : ''}> 👤 Jeder für sich (jede zuständige Person hakt einzeln ab und bekommt eigene Punkte)</label>
         <div class="t-people">Zuständig (mehrere möglich = gemeinsam)
           <div class="pickers">${S.members().map(m =>
             `<button type="button" class="picker ${task.assignees.includes(m.id) ? 'on' : ''}" data-id="${m.id}" style="--c:${m.color}">${m.emoji} ${esc(m.short)}</button>`).join('')}</div>
@@ -723,6 +724,7 @@
             points: Math.max(1, Number(box.querySelector('.t-points').value) || 10),
             fun: box.querySelector('.t-fun').checked,
             rotate,
+            individual: box.querySelector('.t-individual').checked,
             rotationOffset: task.rotationOffset || 0,
             assignees: Array.from(assignees),
             days: freq === 'monthly' ? null : Array.from(days).sort(),

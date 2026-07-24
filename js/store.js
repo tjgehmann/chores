@@ -79,7 +79,7 @@
       goal: null,
       // Tageswahl der Kinder-Specials, Schlüssel `${taskId}|${dateIso}` -> memberId
       picks: {},
-      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true }, // frische Installation: alles aktuell
+      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true, individualV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -177,6 +177,15 @@
           if (!have.has(r.title)) state.shop.rewards.push(JSON.parse(JSON.stringify(r)));
         });
         state.migrations.rewardsV1 = true;
+        S.save();
+      }
+      if (!state.migrations.individualV1) {
+        // Persönliche Routinen auf „jeder für sich" umstellen: jedes Kind
+        // hakt selbstständig ab (eigene Karte, eigene Abnahme, eigene Punkte).
+        state.tasks.forEach(t => {
+          if (['Morgen-Held', 'Abend-Held', 'Kita-Auspacker'].includes(t.title)) t.individual = true;
+        });
+        state.migrations.individualV1 = true;
         S.save();
       }
       if (!state.migrations.workflowV1) {
@@ -381,20 +390,35 @@
         .reduce((sum, c) => sum + ((S.task(c.taskId) || {}).points || 0), 0);
     },
 
-    // Alle Aufgaben-Instanzen für einen Tag (angereichert mit Status)
+    // Alle Aufgaben-Instanzen für einen Tag (angereichert mit Status).
+    // „Jeder für sich"-Aufgaben ergeben eine Instanz PRO zuständiger Person.
     instancesFor(iso) {
-      return state.tasks
-        .filter(t => S.taskOccursOn(t, iso))
-        .map(t => S.instance(t, iso));
+      const out = [];
+      state.tasks.filter(t => S.taskOccursOn(t, iso)).forEach(t => {
+        if (t.individual) S.assigneesFor(t, iso).forEach(m => out.push(S.instance(t, iso, m)));
+        else out.push(S.instance(t, iso));
+      });
+      return out;
     },
 
     key(taskId, iso) { return `${taskId}|${iso}`; },
 
-    instance(task, iso) {
-      const key = S.key(task.id, iso);
+    // Erledigungs-Schlüssel: „Jeder für sich"-Aufgaben (task.individual)
+    // werden PRO PERSON gespeichert – jede/r hakt selbstständig ab.
+    ckey(taskId, iso, memberId) {
+      const t = S.task(taskId);
+      return (t && t.individual && memberId)
+        ? `${taskId}|${iso}|${memberId}`
+        : `${taskId}|${iso}`;
+    },
+
+    instance(task, iso, memberId) {
+      const indiv = !!(task.individual && memberId);
+      const key = indiv ? `${task.id}|${iso}|${memberId}` : S.key(task.id, iso);
       const c = state.completions[key];
-      // Effektiv zuständig an diesem Tag (berücksichtigt Rotation)
-      const assignees = S.assigneesFor(task, iso);
+      // Effektiv zuständig an diesem Tag (berücksichtigt Rotation);
+      // bei „jeder für sich" genau diese eine Person
+      const assignees = indiv ? [memberId] : S.assigneesFor(task, iso);
       // Status: 'open' | 'pending' (zur Abnahme) | 'approved' (abgenommen) | 'rejected' (zurückgegeben)
       const status = c ? (c.status || 'open') : 'open';
       const active = status === 'open' || status === 'rejected'; // muss (noch) getan werden
@@ -404,6 +428,7 @@
       return {
         key,
         task,
+        member: indiv ? memberId : null, // „jeder für sich": diese Person
         assignees,                 // effektiv zuständige Person(en) heute
         rotates: !!task.rotate,
         date: iso,
@@ -425,25 +450,27 @@
     /* --------------------- Workflow: melden / zurückziehen --------------- */
     // Klick auf das Häkchen: offen/zurückgegeben -> zur Abnahme melden;
     // wartend/abgenommen -> wieder zurückziehen (rückgängig).
-    toggleDone(taskId, iso) {
-      const key = S.key(taskId, iso);
-      const c = state.completions[key];
+    // memberId ist nur bei „jeder für sich"-Aufgaben nötig
+    toggleDone(taskId, iso, memberId) {
+      const c = state.completions[S.ckey(taskId, iso, memberId)];
       const status = c ? (c.status || 'open') : 'open';
-      if (status === 'open' || status === 'rejected') S.submit(taskId, iso);
-      else S.withdraw(taskId, iso);
+      if (status === 'open' || status === 'rejected') S.submit(taskId, iso, memberId);
+      else S.withdraw(taskId, iso, memberId);
     },
 
     // Aufgabe als erledigt melden -> Status „zur Abnahme" (pending)
-    submit(taskId, iso) {
-      const key = S.key(taskId, iso);
+    submit(taskId, iso, memberId) {
       const task = S.task(taskId);
+      const indiv = !!(task.individual && memberId);
+      const key = S.ckey(taskId, iso, memberId);
       const existing = state.completions[key];
-      const assignees = S.assigneesFor(task, iso);
+      const assignees = indiv ? [memberId] : S.assigneesFor(task, iso);
       const doers = assignees.filter(id => !S.isOnVacation(id, iso));
       const cover = existing && existing.coverBy ? existing.coverBy : [];
       const allDoers = Array.from(new Set([...doers, ...cover]));
       state.completions[key] = {
         taskId, date: iso,
+        member: indiv ? memberId : undefined, // „jeder für sich": wessen Karte
         status: 'pending', done: false,
         doneBy: allDoers.length ? allDoers : assignees.slice(),
         doneAt: new Date().toISOString(),
@@ -456,8 +483,8 @@
     },
 
     // Zurück auf „Zu tun" (Meldung/Abnahme rückgängig)
-    withdraw(taskId, iso) {
-      delete state.completions[S.key(taskId, iso)];
+    withdraw(taskId, iso, memberId) {
+      delete state.completions[S.ckey(taskId, iso, memberId)];
       S.save();
     },
 
@@ -469,15 +496,16 @@
       return list[Math.floor(Math.random() * list.length)];
     },
 
-    reroll(taskId, iso) {
-      const c = state.completions[S.key(taskId, iso)];
+    reroll(taskId, iso, memberId) {
+      const c = state.completions[S.ckey(taskId, iso, memberId)];
       if (c && c.status === 'pending') { c.rater = S.pickRandomRater(c.doneBy); S.save(); }
     },
 
     /* ----------------------- Abnahme: annehmen / zurückgeben ------------- */
     // Abnehmen: Aufgabe gilt als erledigt, mit Bewertung/Feedback.
-    approve(taskId, iso, { by, stars, comment, kind }) {
-      const c = state.completions[S.key(taskId, iso)];
+    // `member` nur bei „jeder für sich"-Aufgaben (wessen Erledigung).
+    approve(taskId, iso, { by, stars, comment, kind, member }) {
+      const c = state.completions[S.ckey(taskId, iso, member)];
       if (!c) return;
       c.status = 'approved';
       c.done = true;
@@ -487,8 +515,8 @@
     },
 
     // Zurückgeben: Aufgabe fällt zurück auf „Zu tun", mit Begründung.
-    reject(taskId, iso, { by, reason }) {
-      const c = state.completions[S.key(taskId, iso)];
+    reject(taskId, iso, { by, reason, member }) {
+      const c = state.completions[S.ckey(taskId, iso, member)];
       if (!c) return;
       c.status = 'rejected';
       c.done = false;
@@ -568,9 +596,9 @@
       S.save();
     },
     // Vertretung für eine Aufgabe an einem Tag festlegen
-    setCover(taskId, iso, memberIds) {
-      const key = S.key(taskId, iso);
-      const c = state.completions[key] || { taskId, date: iso, done: false, doneBy: [] };
+    setCover(taskId, iso, memberIds, forMember) {
+      const key = S.ckey(taskId, iso, forMember);
+      const c = state.completions[key] || { taskId, date: iso, member: forMember || undefined, done: false, doneBy: [] };
       c.coverBy = memberIds;
       state.completions[key] = c;
       S.save();

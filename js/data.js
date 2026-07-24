@@ -159,7 +159,7 @@
         days: [1], assignees: ['leo'], points: 8, group: 'child', rotate: true, rotationOffset: 1,
         description: 'Löffel und Gabeln aus der Spülmaschine ins richtige Fach sortieren – ohne Messer!' }),
     t({ title: 'Kita-Auspacker', emoji: '🎒', category: 'ordnung', frequency: 'daily',
-        days: [1, 2, 3, 4, 5], assignees: ['toni', 'leo'], points: 8, group: 'child',
+        days: [1, 2, 3, 4, 5], assignees: ['toni', 'leo'], points: 8, group: 'child', individual: true,
         description: 'Nach der Kita: Brotdose und Flasche in die Küche bringen, Jacke und Schuhe an ihren Platz.' }),
     t({ title: 'Back- und Kochhelfer', emoji: '🥕', category: 'kueche', frequency: 'weekly',
         days: [6], assignees: ['leo'], points: 12, group: 'child', rotate: true, rotationOffset: 1,
@@ -183,10 +183,10 @@
      ======================================================================= */
   CHORES.TASKS_UPDATE_2 = [
     t({ title: 'Morgen-Held', emoji: '🌞', category: 'selbst', frequency: 'daily',
-        assignees: ['toni', 'leo'], points: 8, group: 'child',
+        assignees: ['toni', 'leo'], points: 8, group: 'child', individual: true,
         description: 'Alleine anziehen und Zähne putzen – fertig für den Tag!' }),
     t({ title: 'Abend-Held', emoji: '🌙', category: 'selbst', frequency: 'daily',
-        assignees: ['toni', 'leo'], points: 8, group: 'child',
+        assignees: ['toni', 'leo'], points: 8, group: 'child', individual: true,
         description: 'Schlafanzug an, Zähne putzen und die Kleider in den Wäschekorb.' }),
     t({ title: 'Müll-Check & runterbringen', emoji: '🚮', category: 'draussen', frequency: 'daily',
         assignees: ['papa'], points: 8, group: 'adult', rotate: true, rotationOffset: 1,

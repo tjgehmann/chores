@@ -71,7 +71,12 @@ sich aber jederzeit anpassen.
   Balken in der Heute-Ansicht und auf dem Kinder-Board. Festlegen in der
   Heute-Ansicht.
 - **Klassisch & ausgefallen** – von „Spülmaschine ausräumen" bis „Krümel-Detektiv", „Familien-DJ" und „Licht-Wächter".
-- **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen.
+- **Gemeinsame Aufgaben** – mehrere Personen erledigen etwas zusammen
+  (ein gemeinsames Häkchen, z. B. „Spielzeug aufräumen").
+- **„Jeder für sich"-Aufgaben** 👤 – persönliche Routinen wie Morgen-Held,
+  Abend-Held oder Kita-Auspacker erzeugen pro Kind eine **eigene Karte**:
+  Jede/r hakt selbstständig ab, wird einzeln abgenommen und bekommt eigene
+  Punkte. Pro Aufgabe im Editor umschaltbar.
 - **Urlaub & Vertretung** – freie Tage/Wochen eintragen; die App zeigt, welche
   Aufgaben jemand anderes übernehmen muss, und man kann eine Vertretung wählen.
 - **Abnahme-Workflow** – jede Aufgabe durchläuft **Zu tun → Zur Abnahme → Abgenommen**:
