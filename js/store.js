@@ -79,7 +79,7 @@
       goal: null,
       // Tageswahl der Kinder-Specials, Schlüssel `${taskId}|${dateIso}` -> memberId
       picks: {},
-      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true, individualV1: true }, // frische Installation: alles aktuell
+      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true, individualV1: true, memberColorsV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -195,6 +195,20 @@
           if (!c.status) c.status = c.done ? 'approved' : 'open';
         });
         state.migrations.workflowV1 = true;
+        S.save();
+      }
+      if (!state.migrations.memberColorsV1) {
+        // Personenfarben, die exakt einer Status-/Kategoriefarbe entsprachen
+        // (Leo = „abgenommen"-Grün, Toni = „Vertretung nötig"-Orange,
+        // Mama = Kategorie „Spaß-Job"), auf unterscheidbare Töne heben.
+        // Nur ersetzen, wenn noch die alte Standardfarbe gesetzt ist –
+        // selbst gewählte Farben bleiben unangetastet.
+        const recolor = { mama: ['#e84393', '#c2255c'], toni: ['#e17055', '#d35400'], leo: ['#00b894', '#1f7a49'] };
+        state.members.forEach(m => {
+          const r = recolor[m.id];
+          if (r && String(m.color).toLowerCase() === r[0]) m.color = r[1];
+        });
+        state.migrations.memberColorsV1 = true;
         S.save();
       }
       return state;

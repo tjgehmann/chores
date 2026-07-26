@@ -15,7 +15,7 @@
     { id: 'mama',  name: 'Mama',     short: 'Mama', emoji: '👩', color: '#c2255c', kind: 'adult' },
     { id: 'papa',  name: 'Papa',     short: 'Papa', emoji: '🧔', color: '#0984e3', kind: 'adult' },
     { id: 'toni',  name: 'Antonia',  short: 'Toni', emoji: '🦄', color: '#d35400', kind: 'child' },
-    { id: 'leo',   name: 'Leonard',  short: 'Leo',  emoji: '🚀', color: '#00967d', kind: 'child' },
+    { id: 'leo',   name: 'Leonard',  short: 'Leo',  emoji: '🚀', color: '#1f7a49', kind: 'child' },
   ];
 
   // --- Kategorien (für Farben / Filter) ---------------------------------
