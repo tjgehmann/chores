@@ -90,11 +90,28 @@
       const kids = S.members().filter(m => m.kind === 'child');
       const adults = S.members().filter(m => m.kind === 'adult');
 
+      // Familienziel gleich beim Öffnen zeigen: „So weit sind wir schon!"
+      const goal = S.goal();
+      let goalHTML = '';
+      if (goal) {
+        const gp = S.goalProgress();
+        const pct = Math.min(100, Math.round(gp / goal.target * 100));
+        const reached = gp >= goal.target;
+        goalHTML = `<div class="start-goal ${reached ? 'reached' : ''}">
+          <div class="start-goal-head">${goal.emoji} Unser Ziel: <b>${esc(goal.title)}</b></div>
+          <div class="start-goal-bar"><span style="width:${pct}%"></span></div>
+          <div class="start-goal-txt">${reached
+            ? 'Geschafft! 🎉 Wir haben es zusammen geschafft!'
+            : `⭐ ${gp} von ${goal.target} – noch ${goal.target - gp} Sterne sammeln wir zusammen! 💪`}</div>
+        </div>`;
+      }
+
       overlay = el(`<div id="startapp">
         <div class="start-inner">
           <div class="start-brand">🏡 Familien-Dashboard</div>
           <h1 class="start-h1">Wer bist du? 👋</h1>
           <div class="start-sub">${esc(D.WEEKDAY_LONG[dt.getDay()])}, ${dt.getDate()}. ${esc(D.MONTHS[dt.getMonth()])} – tipp auf dich und sieh, was heute zu tun ist.</div>
+          ${goalHTML}
           <div class="start-people"></div>
         </div>
       </div>`);

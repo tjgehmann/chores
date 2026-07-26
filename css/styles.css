@@ -947,6 +947,21 @@ body.startmode-on { overflow: hidden; }
 .start-brand { font-size: 1.1rem; font-weight: 800; opacity: .65; margin-bottom: 18px; }
 .start-h1 { font-size: 2.6rem; font-weight: 900; margin: 0 0 10px; }
 .start-sub { opacity: .7; margin-bottom: 30px; }
+.start-goal {
+  margin: 0 auto 26px; width: min(560px, 100%);
+  background: #ffffffcc; border-radius: 22px; padding: 14px 22px 12px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.1); text-align: center;
+}
+@media (prefers-color-scheme: dark) { .start-goal { background: #ffffff1c; } }
+.start-goal-head { font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; }
+.start-goal-bar { height: 16px; background: #dfe4ea66; border-radius: 999px; overflow: hidden; }
+.start-goal-bar span {
+  display: block; height: 100%; border-radius: 999px; transition: width .6s;
+  background: linear-gradient(90deg, #e17055, #fdcb6e);
+}
+.start-goal.reached .start-goal-bar span { background: linear-gradient(90deg, #00b894, #55efc4); }
+.start-goal-txt { margin-top: 6px; font-weight: 700; }
+.start-goal.reached .start-goal-txt { color: #00b894; }
 .start-people { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
 .start-person {
   border: none; cursor: pointer; background: #fff; border-radius: 32px; padding: 30px 40px;
