@@ -325,6 +325,8 @@
 
     // Gilt eine Aufgabe an diesem Datum?
     taskOccursOn(task, iso) {
+      // Einmalig: gilt genau an ihrem Datum und danach nie wieder.
+      if (task.frequency === 'once') return task.date === iso;
       if (task.frequency === 'daily') {
         if (task.days && task.days.length) return task.days.includes(D.weekdayIndex(iso));
         return true;

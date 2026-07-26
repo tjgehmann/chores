@@ -33,6 +33,7 @@
     einkauf:  { label: 'Einkauf & Orga', emoji: '🛒' },
     spass:    { label: 'Spaß-Job',    emoji: '🎉' },
     selbst:   { label: 'Ich selbst',  emoji: '🪥' },
+    spontan:  { label: 'Spontan',     emoji: '⚡' },
   };
 
   // Wochentage: 0 = Sonntag … 6 = Samstag

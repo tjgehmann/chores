@@ -42,12 +42,14 @@
           <div class="subtle">${esc(title)}</div>
         </div>
         <div class="daynav">
+          <button class="btn primary quick-task">⚡ Spontane Aufgabe</button>
           <button class="btn ghost" data-nav="-1">◀</button>
           <button class="btn ghost" data-nav="today">Heute</button>
           <button class="btn ghost" data-nav="1">▶</button>
         </div>
       </div>
     </div>`);
+    wrap.querySelector('.quick-task').addEventListener('click', () => UI.quickTaskDialog(iso, ctx));
     wrap.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
       const v = b.dataset.nav;
       ctx.setDate(v === 'today' ? D.today() : D.addDays(iso, Number(v)));
@@ -259,10 +261,10 @@
 
     const monthly = [];
     monthDays.forEach(iso => S.instancesFor(iso).forEach(i => {
-      if (i.task.frequency === 'monthly') monthly.push({ iso, i });
+      if (i.task.frequency === 'monthly' || i.task.frequency === 'once') monthly.push({ iso, i });
     }));
     if (monthly.length) {
-      const msec = el(`<div class="card"><h3>📆 Diesen Monat</h3><div class="agenda-day-list"></div></div>`);
+      const msec = el(`<div class="card"><h3>📆 Diesen Monat</h3><div class="agenda-day-list"></div></div>`);  // monatliche + einmalige Termine
       const list = msec.querySelector('.agenda-day-list');
       monthly.sort((a, b) => a.iso.localeCompare(b.iso)).forEach(({ iso, i }) => {
         const dt = D.parse(iso);
@@ -559,14 +561,20 @@
     </div>`);
     wrap.querySelector('.add-task').addEventListener('click', () => UI.taskDialog(null, ctx));
 
+    // Einmalige Aufgaben, deren Tag vorbei ist, würden die Listen mit der Zeit
+    // zumüllen. Sie bleiben erhalten (die Punkte hängen daran), wandern aber in
+    // einen eingeklappten Bereich am Ende.
+    const past = t => t.frequency === 'once' && (t.date || '') < D.today();
+
     const groups = { child: 'Kinder', adult: 'Erwachsene', family: 'Familie / gemeinsam' };
     Object.keys(groups).forEach(g => {
-      const items = S.tasks().filter(t => t.group === g);
+      const items = S.tasks().filter(t => t.group === g && !past(t));
       if (!items.length) return;
       const sec = el(`<div class="manage-group"><h3 class="section">${groups[g]} (${items.length})</h3><div class="manage-list"></div></div>`);
       const list = sec.querySelector('.manage-list');
       items.forEach(t => {
-        const freq = t.frequency === 'daily' ? (t.days ? 'an bestimmten Tagen' : 'täglich')
+        const freq = t.frequency === 'once' ? `einmalig am ${onceLabel(t)}`
+          : t.frequency === 'daily' ? (t.days ? 'an bestimmten Tagen' : 'täglich')
           : t.frequency === 'weekly' ? 'wöchentlich' : 'monatlich';
         const who = t.rotate
           ? '🔄 rotiert: ' + S.rotationPool(t).map(id => (S.member(id) || {}).short).join(' ↔ ')
@@ -588,10 +596,44 @@
       });
       wrap.appendChild(sec);
     });
+
+    const old = S.tasks().filter(past).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    if (old.length) {
+      const det = el(`<details class="manage-past"><summary>🗓️ Vorbei: einmalige Aufgaben (${old.length})</summary>
+        <p class="subtle small">Erledigt und vorbei – sie tauchen im Plan nicht mehr auf.
+          Zum Löschen bitte einzeln entfernen; damit verschwinden auch ihre Punkte aus der Statistik.</p>
+        <div class="manage-list"></div></details>`);
+      const list = det.querySelector('.manage-list');
+      old.forEach(t => {
+        const row = el(`<div class="manage-row">
+          <span class="mr-emoji">${t.emoji}</span>
+          <div class="mr-main">
+            <div class="mr-title">${esc(t.title)}</div>
+            <div class="subtle small">war am ${onceLabel(t)} · +${t.points}</div>
+          </div>
+          <button class="btn tiny mr-edit">Bearbeiten</button>
+          <button class="btn tiny danger mr-del">✕</button>
+        </div>`);
+        row.querySelector('.mr-edit').addEventListener('click', () => UI.taskDialog(t, ctx));
+        row.querySelector('.mr-del').addEventListener('click', () => {
+          UI.confirm(`„${t.title}“ wirklich löschen?`, () => { S.removeTask(t.id); ctx.render(); });
+        });
+        list.appendChild(row);
+      });
+      wrap.appendChild(det);
+    }
     root.appendChild(wrap);
   };
 
+  // Datum einer einmaligen Aufgabe kurz und lesbar
+  function onceLabel(t) {
+    if (!t.date) return '—';
+    const d = D.parse(t.date);
+    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  }
+
   // Emoji-Auswahl für Aufgaben-Icons (damit Kinder sie leicht erkennen)
+  const QUICK_EMOJI = ['⚡','🧹','📦','🛒','🚗','🍂','🎒','🔧','💐','📮','🧼','🐾'];
   const EMOJI_PALETTE = ['🧸','📚','🧹','🧽','🪣','🚿','🛁','🚽','🧺','🧦','👕','👟',
     '🛏️','🍽️','🍴','🥄','🧊','🍳','🥗','🛒','🗑️','♻️','🪴','🌻','🐟','🐶','🐱','📬',
     '🚗','🪟','💡','🔌','📝','📅','🎵','🎬','🍦','🎨','✏️','🧩','⚽','🪥','🌙','⭐','🎉','🔍'];
@@ -599,7 +641,8 @@
   UI.taskDialog = function (task, ctx) {
     const isNew = !task;
     task = task || { title: '', emoji: '⭐', category: 'ordnung', frequency: 'daily',
-      days: null, dayOfMonth: 1, assignees: [], points: 10, group: 'family', description: '', fun: false, rotate: false };
+      days: null, dayOfMonth: 1, date: D.today(), assignees: [], points: 10, group: 'family',
+      description: '', fun: false, rotate: false };
     const catOpts = Object.entries(CAT).map(([k, v]) =>
       `<option value="${k}" ${k === task.category ? 'selected' : ''}>${v.emoji} ${v.label}</option>`).join('');
     const dayBtns = D.WEEKDAY_SHORT.map((n, idx) =>
@@ -627,11 +670,14 @@
             <option value="daily" ${task.frequency === 'daily' ? 'selected' : ''}>Täglich</option>
             <option value="weekly" ${task.frequency === 'weekly' ? 'selected' : ''}>Wöchentlich</option>
             <option value="monthly" ${task.frequency === 'monthly' ? 'selected' : ''}>Monatlich</option>
+            <option value="once" ${task.frequency === 'once' ? 'selected' : ''}>Einmalig</option>
           </select></label>
           <label class="t-funwrap"><input type="checkbox" class="t-fun" ${task.fun ? 'checked' : ''}> 🎉 Spaß-Job</label>
         </div>
         <div class="t-days-wrap">Wochentage <span class="subtle small">(bei „täglich“ leer = jeden Tag)</span><div class="daybtns">${dayBtns}</div></div>
         <div class="t-mday-wrap" style="display:none">Tag im Monat <input type="number" class="t-mday" value="${task.dayOfMonth || 1}" min="1" max="28"></div>
+        <div class="t-date-wrap" style="display:none">Datum <input type="date" class="t-date" value="${esc(task.date || D.today())}">
+          <div class="subtle small">Die Aufgabe erscheint nur an diesem Tag und wiederholt sich nicht.</div></div>
         <label class="t-rotwrap"><input type="checkbox" class="t-rotate" ${task.rotate ? 'checked' : ''}> 🔄 Wöchentlich rotieren (reihum abwechseln)</label>
         <div class="t-rothint subtle small"></div>
         <label class="t-rotwrap"><input type="checkbox" class="t-individual" ${task.individual ? 'checked' : ''}> 👤 Jeder für sich (jede zuständige Person hakt einzeln ab und bekommt eigene Punkte)</label>
@@ -661,8 +707,18 @@
         }));
         const freqSel = box.querySelector('.t-freq');
         const syncFreq = () => {
-          box.querySelector('.t-days-wrap').style.display = freqSel.value === 'monthly' ? 'none' : '';
-          box.querySelector('.t-mday-wrap').style.display = freqSel.value === 'monthly' ? '' : 'none';
+          const f = freqSel.value;
+          box.querySelector('.t-days-wrap').style.display = (f === 'monthly' || f === 'once') ? 'none' : '';
+          box.querySelector('.t-mday-wrap').style.display = f === 'monthly' ? '' : 'none';
+          box.querySelector('.t-date-wrap').style.display = f === 'once' ? '' : 'none';
+          // Rotation ist wochenweise gedacht und ergibt bei einem einzelnen
+          // Termin keinen Sinn – Auswahl ausblenden und zurücksetzen.
+          const rotWrap = box.querySelector('.t-rotate').closest('.t-rotwrap');
+          rotWrap.style.display = f === 'once' ? 'none' : '';
+          if (f === 'once' && box.querySelector('.t-rotate').checked) {
+            box.querySelector('.t-rotate').checked = false;
+            box.querySelector('.t-rotate').dispatchEvent(new Event('change'));
+          }
         };
         freqSel.addEventListener('change', syncFreq); syncFreq();
 
@@ -696,20 +752,100 @@
             frequency: freq,
             points: Math.max(1, Number(box.querySelector('.t-points').value) || 10),
             fun: box.querySelector('.t-fun').checked,
-            rotate,
+            rotate: freq === 'once' ? false : rotate,
             individual: box.querySelector('.t-individual').checked,
             rotationOffset: task.rotationOffset || 0,
             assignees: Array.from(assignees),
             days: freq === 'monthly' ? null : Array.from(days).sort(),
             dayOfMonth: freq === 'monthly' ? Number(box.querySelector('.t-mday').value) || 1 : (task.dayOfMonth || 1),
+            date: freq === 'once' ? (box.querySelector('.t-date').value || D.today()) : (task.date || null),
           };
           // Bei Rotation ohne feste Auswahl: Pool aus der Gruppe verwenden
-          if (rotate && !patch.assignees.length) patch.assignees = [S.rotationPool(patch)[0]];
+          if (patch.rotate && !patch.assignees.length) patch.assignees = [S.rotationPool(patch)[0]];
           if (!patch.assignees.length) patch.assignees = S.members().map(m => m.id);
           if (isNew) S.addTask(patch); else S.updateTask(task.id, patch);
           close(); ctx.render();
         });
       }, { save: 'Speichern' });
+  };
+
+  /* ---------------------------------------------------------------------
+     Spontane Aufgabe: einmalig, für genau einen Tag.
+     Bewusst knapp gehalten – Titel, wer und wie viele Punkte. Alles Weitere
+     (Beschreibung, Kategorie, „jeder für sich") steht im vollen Editor.
+     --------------------------------------------------------------------- */
+  UI.quickTaskDialog = function (iso, ctx) {
+    const dt = D.parse(iso);
+    const wann = iso === D.today()
+      ? 'heute'
+      : `am ${D.WEEKDAY_LONG[dt.getDay()]}, ${dt.getDate()}. ${D.MONTHS[dt.getMonth()]}`;
+    const palette = QUICK_EMOJI.map((e, n) =>
+      `<button type="button" class="emoji-opt ${n === 0 ? 'on' : ''}" data-e="${e}">${e}</button>`).join('');
+
+    UI.modal('⚡ Spontane Aufgabe', `
+      <div class="tf">
+        <label>Was ist zu tun?<input class="q-title" placeholder="z. B. Laub im Hof zusammenrechen"></label>
+        <div class="tf-row">
+          <label class="tf-emoji">Icon<input class="q-emoji" value="⚡" maxlength="4"></label>
+          <label class="tf-pts">Punkte<input type="number" class="q-points" value="10" min="1" max="100"></label>
+        </div>
+        <div class="emoji-palette">${palette}</div>
+        <div class="t-people">Wer macht es? <span class="subtle small">(mehrere = gemeinsam)</span>
+          <div class="pickers">${S.members().map(m =>
+            `<button type="button" class="picker" data-id="${m.id}" style="--c:${m.color}">${m.emoji} ${esc(m.short)}</button>`).join('')}</div>
+        </div>
+        <p class="subtle small">Die Aufgabe gilt nur ${esc(wann)} und wiederholt sich nicht.
+          Punkte gibt es wie immer erst nach der Abnahme.</p>
+        <p class="q-warn small"></p>
+      </div>`,
+      (box, close) => {
+        box.querySelectorAll('.emoji-opt').forEach(b => b.addEventListener('click', () => {
+          box.querySelector('.q-emoji').value = b.dataset.e;
+          box.querySelectorAll('.emoji-opt').forEach(x => x.classList.remove('on'));
+          b.classList.add('on');
+        }));
+        const assignees = new Set();
+        box.querySelectorAll('.picker').forEach(b => b.addEventListener('click', () => {
+          const id = b.dataset.id;
+          if (assignees.has(id)) assignees.delete(id); else assignees.add(id);
+          b.classList.toggle('on');
+          box.querySelector('.q-warn').textContent = '';
+        }));
+        const titleEl = box.querySelector('.q-title');
+        titleEl.focus();
+
+        box.querySelector('.modal-save').addEventListener('click', () => {
+          const title = titleEl.value.trim();
+          if (!title) { titleEl.focus(); return; }
+          if (!assignees.size) {
+            box.querySelector('.q-warn').textContent = 'Bitte mindestens eine Person auswählen.';
+            return;
+          }
+          // Gruppe aus den Gewählten ableiten, damit die Karte im richtigen
+          // Bereich der Aufgaben-Verwaltung landet.
+          const kinds = new Set(Array.from(assignees).map(id => (S.member(id) || {}).kind));
+          S.addTask({
+            title,
+            emoji: box.querySelector('.q-emoji').value.trim() || '⚡',
+            category: 'spontan',
+            description: '',
+            group: kinds.size === 1 ? (kinds.has('child') ? 'child' : 'adult') : 'family',
+            frequency: 'once',
+            date: iso,
+            points: Math.max(1, Number(box.querySelector('.q-points').value) || 10),
+            fun: false,
+            rotate: false,
+            individual: false,
+            rotationOffset: 0,
+            assignees: Array.from(assignees),
+            days: null,
+            dayOfMonth: 1,
+          });
+          close();
+          ctx.render();
+          UI.toast('⚡ Aufgabe hinzugefügt');
+        });
+      }, { save: 'Hinzufügen' });
   };
 
   /* =====================================================================

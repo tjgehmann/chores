@@ -38,6 +38,14 @@ sich aber jederzeit anpassen.
   offenen Aufgaben fallen ins Gewicht) statt eines leeren Raster-Kalenders;
   darunter die wenigen monatlichen Aufgaben und der Monats-Punktestand.
 - **Aufgaben für alle** – Kinderaufgaben (altersgerecht), Erwachsenen-Aufgaben und gemeinsame Aufgaben.
+- **Spontane Aufgaben** ⚡ – nicht alles wiederholt sich: Über „⚡ Spontane
+  Aufgabe" in der Heute-Ansicht lässt sich in ein paar Sekunden eine
+  **einmalige** Aufgabe für genau diesen Tag anlegen (Titel, wer, Punkte).
+  Sie läuft durch denselben Abnahme-Weg und bringt nach der Abnahme Punkte,
+  taucht am nächsten Tag aber nicht wieder auf. Im vollen Editor gibt es die
+  Häufigkeit „Einmalig" mit freiem Datum, um so etwas vorzuplanen. Abgelaufene
+  Einmal-Aufgaben rutschen im Reiter „Aufgaben" in einen eingeklappten Bereich,
+  bleiben aber erhalten – ihre Punkte hängen daran.
 - **Rotierende Aufgaben** 🔄 – manche Aufgaben wechseln wöchentlich reihum. Dabei
   gilt: **Eltern-Aufgaben rotieren nur zwischen Mama & Papa, Kinder-Aufgaben nur
   zwischen Toni & Leo** (abgeleitet aus der Gruppe). Pro Aufgabe im Editor an-/abschaltbar.

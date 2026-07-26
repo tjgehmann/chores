@@ -115,7 +115,9 @@ h3 { margin: 0; font-size: 1.15rem; }
 .btn.ghost { background: transparent; }
 .btn.danger { background: color-mix(in srgb, var(--danger) 12%, var(--card)); color: var(--danger); border-color: transparent; }
 .btn.tiny { padding: 6px 12px; font-size: .82rem; border-radius: 10px; }
-.daynav { display: flex; gap: 8px; flex-wrap: wrap; }
+.daynav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.daynav .quick-task { margin-right: 6px; }
+.q-warn { color: var(--danger); font-weight: 700; min-height: 1.1em; }
 
 /* ---------------------------- Tagesfortschritt ------------------------ */
 .dayprogress { margin-bottom: 20px; }
@@ -443,6 +445,13 @@ h3 { margin: 0; font-size: 1.15rem; }
 /* --------------------------- Aufgaben verwalten ----------------------- */
 .manage-list { display: flex; flex-direction: column; gap: 8px; }
 .manage-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; border-left: 4px solid var(--line); }
+/* Vorbei: eingeklappter Bereich für abgelaufene Einmal-Aufgaben */
+.manage-past { margin-top: 26px; }
+.manage-past > summary {
+  cursor: pointer; font-weight: 800; font-size: 1.05rem; padding: 10px 4px;
+  color: var(--muted);
+}
+.manage-past .manage-row { opacity: .72; }
 .mr-emoji { font-size: 1.5rem; }
 .mr-main { flex: 1; min-width: 0; }
 .mr-title { font-weight: 700; }
