@@ -14,7 +14,6 @@
 
   const S = CHORES.store;
   const D = CHORES.date;
-  const CAT = CHORES.CATEGORIES;
 
   const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
@@ -219,8 +218,7 @@
       </div>`);
       const row = box.querySelector('.kid-choice-row');
       specials.forEach(t => {
-        const cat = CAT[t.category] || { color: '#999' };
-        const b = el(`<button class="kid-choice-card" style="--cat:${cat.color}">
+        const b = el(`<button class="kid-choice-card">
           <span class="kid-choice-emoji">${t.emoji}</span>
           <span class="kid-choice-title">${esc(t.title)}</span>
         </button>`);
@@ -263,11 +261,10 @@
 
   function boardCard(i, col) {
     const t = i.task;
-    const cat = CAT[t.category] || { color: '#999' };
     const badge = col === 'done' ? '<span class="kid-card-check">✔</span>'
       : col === 'checking' ? '<span class="kid-card-wait">👀</span>'
       : (i.rejected ? '<span class="kid-card-again" title="nochmal">🔁</span>' : '<span class="kid-card-go">▶</span>');
-    const card = el(`<button class="kid-card col-${col} ${i.rejected ? 'is-rejected' : ''}" style="--cat:${cat.color}">
+    const card = el(`<button class="kid-card col-${col} ${i.rejected ? 'is-rejected' : ''}">
       <span class="kid-card-icon">${t.emoji}</span>
       <span class="kid-card-main">
         <span class="kid-card-title">${esc(t.title)}</span>
@@ -289,9 +286,9 @@
 
   function openFocus(i) {
     const t = i.task;
-    const cat = CAT[t.category] || { color: '#999' };
+    const me = S.member(state.child) || {};
     const rejBy = i.rejection ? S.member(i.rejection.by) : null;
-    const focus = el(`<div class="kid-focus" style="--cat:${cat.color}">
+    const focus = el(`<div class="kid-focus" style="--c:${me.color || '#6c5ce7'}">
       <button class="kid-focus-back" title="zurück">↩︎</button>
       <div class="kid-focus-inner">
         <div class="kid-focus-icon">${t.emoji}</div>

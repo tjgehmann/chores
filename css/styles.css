@@ -145,27 +145,36 @@ h3 { margin: 0; font-size: 1.15rem; }
 .lane-tasks { padding: 0 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 
 /* ------------------------------- Tasks -------------------------------- */
+/* --st = Statusfarbe. Sie ist der EINZIGE Farbträger der Karte: offen bleibt
+   bewusst farblos (Normalfall braucht kein Signal), nur Abweichungen davon
+   bekommen Farbe. Die Kategorie trägt Emoji + Text, die Person Emoji + --own. */
 .task {
+  --st: var(--line);
   display: flex; gap: 12px; padding: 13px; border-radius: var(--radius-sm);
-  background: var(--bg); border-left: 5px solid var(--cat);
+  background: var(--bg); border-left: 5px solid var(--st);
   transition: opacity .2s, transform .1s;
 }
-.task.status-approved { opacity: .62; }
+.task.status-approved { --st: var(--good); opacity: .62; }
 .task.status-approved .task-title { text-decoration: line-through; }
-.task.status-pending { background: color-mix(in srgb, #fdcb6e 12%, var(--bg)); border-left-color: #e1a100; }
-.task.status-rejected { background: color-mix(in srgb, var(--danger) 9%, var(--bg)); border-left-color: var(--danger); }
-.task.cover { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--bg)); }
+.task.status-pending { --st: #e1a100; background: color-mix(in srgb, #fdcb6e 12%, var(--bg)); }
+.task.status-rejected { --st: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--bg)); }
+.task.cover { --st: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--bg)); }
 .check {
   flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; cursor: pointer;
-  border: 2.5px solid var(--cat); background: transparent; color: #fff;
+  border: 2.5px solid var(--muted); background: transparent; color: #fff;
   font-size: 1.3rem; font-weight: 900; display: grid; place-items: center;
   transition: transform .1s, background .15s;
 }
 .check:active { transform: scale(.9); }
 .task.status-approved .check { background: var(--good); border-color: var(--good); }
 .task.status-pending .check { background: #f1b100; border-color: #f1b100; }
-.pendingtag { --c: #e1a100; }
-.rejecttag { --c: var(--danger); }
+.task.status-rejected .check { border-color: var(--danger); }
+.pendingtag { color: #6f5000; background: color-mix(in srgb, #e1a100 16%, transparent); }
+.rejecttag { color: #a5281b; background: color-mix(in srgb, var(--danger) 14%, transparent); }
+@media (prefers-color-scheme: dark) {
+  .pendingtag { color: #ffd257; }
+  .rejecttag { color: #ff8a7a; }
+}
 .reject-note {
   margin-top: 8px; font-size: .84rem; color: var(--danger); font-weight: 700;
   background: color-mix(in srgb, var(--danger) 10%, transparent); padding: 8px 10px; border-radius: 10px;
@@ -176,12 +185,12 @@ h3 { margin: 0; font-size: 1.15rem; }
 .task-icon {
   position: relative; flex: 0 0 auto; width: 48px; height: 48px; border-radius: 14px;
   display: grid; place-items: center; font-size: 1.8rem;
-  background: color-mix(in srgb, var(--cat) 16%, transparent);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
 }
 .task.kidtask .task-icon { width: 60px; height: 60px; font-size: 2.4rem; border-radius: 16px; }
 .owner-badge {
   position: absolute; bottom: -6px; right: -6px; font-size: .95rem;
-  background: var(--card); border: 2px solid var(--own, var(--cat));
+  background: var(--card); border: 2px solid var(--own, var(--muted));
   border-radius: 999px; width: 24px; height: 24px; display: grid; place-items: center;
   box-shadow: var(--shadow);
 }
@@ -196,12 +205,17 @@ h3 { margin: 0; font-size: 1.15rem; }
   vertical-align: middle;
 }
 .task-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 5px 0; }
+/* Meta-Chips setzen ihre Farbe AUSDRÜCKLICH – sie dürfen --c nicht von der
+   Spalte (.lane trägt die Personenfarbe) erben, sonst sähe der Kategorie-Chip
+   wie ein Personen-Chip aus. Kategorie ist neutral, nur Status ist farbig. */
 .cat {
-  font-size: .74rem; font-weight: 700; color: var(--c, var(--muted));
-  background: color-mix(in srgb, var(--c, #999) 14%, transparent);
+  font-size: .74rem; font-weight: 700;
+  color: color-mix(in srgb, var(--ink) 80%, transparent);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
   padding: 2px 9px; border-radius: 999px;
 }
-.cat.shared { --c: var(--accent); }
+.cat.shared { color: #5b4bd6; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+@media (prefers-color-scheme: dark) { .cat.shared { color: #a29bfe; } }
 .pts { font-size: .78rem; font-weight: 800; color: var(--good); margin-left: auto; }
 .task-desc { font-size: .85rem; color: var(--muted); margin: 4px 0; }
 .task-people { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -243,14 +257,15 @@ h3 { margin: 0; font-size: 1.15rem; }
 .agenda-day-count { font-size: .82rem; font-weight: 800; color: var(--good); }
 .agenda-day-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .agenda-pill {
+  --st: var(--line);
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; cursor: pointer;
-  border: none; border-left: 4px solid var(--cat); background: var(--bg); color: var(--ink);
+  border: none; border-left: 4px solid var(--st); background: var(--bg); color: var(--ink);
   padding: 9px 12px; border-radius: 10px; font: inherit; font-size: .88rem; transition: transform .1s;
 }
 .agenda-pill:active { transform: scale(.98); }
-.agenda-pill.status-approved { opacity: .55; text-decoration: line-through; }
-.agenda-pill.status-pending { background: color-mix(in srgb, #fdcb6e 22%, var(--bg)); }
-.agenda-pill.status-rejected { background: color-mix(in srgb, var(--danger) 14%, var(--bg)); }
+.agenda-pill.status-approved { --st: var(--good); opacity: .55; text-decoration: line-through; }
+.agenda-pill.status-pending { --st: #e1a100; background: color-mix(in srgb, #fdcb6e 22%, var(--bg)); }
+.agenda-pill.status-rejected { --st: var(--danger); background: color-mix(in srgb, var(--danger) 14%, var(--bg)); }
 .agenda-pill-emoji { font-size: 1.15rem; flex: 0 0 auto; }
 .agenda-pill-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agenda-pill-who { font-size: .85rem; flex: 0 0 auto; color: var(--muted); font-weight: 700; }
@@ -301,7 +316,7 @@ h3 { margin: 0; font-size: 1.15rem; }
 /* ------------------------------ Bewerten ------------------------------ */
 .hint { background: color-mix(in srgb, var(--accent) 10%, var(--card)); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: .92rem; }
 .ratelist { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-.rateitem { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; border-left: 5px solid var(--cat); }
+.rateitem { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; border-left: 5px solid #e1a100; }
 /* Abnahme-Stau: wartet länger als 24 h */
 .rateitem.overdue { border-left-color: var(--danger); box-shadow: var(--shadow), 0 0 0 2px color-mix(in srgb, var(--danger) 45%, transparent); }
 .ri-overdue { color: var(--danger); font-weight: 800; font-size: .85rem; margin-top: 4px; }
@@ -356,7 +371,7 @@ h3 { margin: 0; font-size: 1.15rem; }
 .kid-choice-card {
   border: none; cursor: pointer; background: #fff; border-radius: 18px; padding: 12px 10px;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.12); border-bottom: 6px solid var(--cat); transition: transform .1s;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12); border-bottom: 6px solid #e17055; transition: transform .1s;
 }
 @media (prefers-color-scheme: dark) { .kid-choice-card { background: #2a2f3a; color: #f4f6fb; } }
 .kid-choice-card:active { transform: scale(.94); }
@@ -370,6 +385,9 @@ h3 { margin: 0; font-size: 1.15rem; }
   font-size: 1.2rem; padding: 12px 22px; border-radius: 999px; box-shadow: 0 6px 16px rgba(0,0,0,.12);
 }
 .kid-timer { display: flex; align-items: center; gap: 10px; width: min(420px, 86%); }
+/* Ohne diese Zeile schlägt display:flex die [hidden]-Regel des Browsers und
+   der Sanduhr-Balken steht schon da, bevor die Sanduhr gestartet wurde. */
+.kid-timer[hidden] { display: none; }
 .kid-timer-face { font-size: 1.6rem; }
 .kid-timer-bar { flex: 1; height: 16px; background: #ffffff88; border-radius: 999px; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,.12); }
 .kid-timer-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #fdcb6e, #e17055); transition: width 1s linear; }
@@ -424,7 +442,7 @@ h3 { margin: 0; font-size: 1.15rem; }
 
 /* --------------------------- Aufgaben verwalten ----------------------- */
 .manage-list { display: flex; flex-direction: column; gap: 8px; }
-.manage-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; border-left: 4px solid var(--cat); }
+.manage-row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px; border-left: 4px solid var(--line); }
 .mr-emoji { font-size: 1.5rem; }
 .mr-main { flex: 1; min-width: 0; }
 .mr-title { font-weight: 700; }
@@ -704,7 +722,7 @@ body.kidmode-on { overflow: hidden; }
 .kid-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .kid-card-wait { font-size: 1.5rem; }
 .kid-card-again { font-size: 1.4rem; }
-.kid-card.is-rejected { border-left-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, #fff); }
+.kid-card.is-rejected { --st: var(--danger); background: color-mix(in srgb, var(--danger) 8%, #fff); }
 @media (prefers-color-scheme: dark) { .kid-card.is-rejected { background: #3a2a2e; } }
 .kid-card-again-note { font-size: .78rem; font-weight: 800; color: var(--danger); }
 .kid-focus-again {
@@ -724,17 +742,23 @@ body.kidmode-on { overflow: hidden; }
 .kid-col-body { flex: 1; overflow-y: auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 12px; }
 
 .kid-card {
+  /* Kante in der Farbe der Spaltenüberschrift: blau = zu tun, gelb = wird
+     geschaut, grün = geschafft. Kategorie spielt für Vierjährige keine Rolle. */
+  --st: #0984e3;
   display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left;
   border: none; background: #fff; border-radius: 20px; padding: 14px 16px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.1); border-left: 8px solid var(--cat); transition: transform .1s;
+  box-shadow: 0 6px 16px rgba(0,0,0,.1); border-left: 8px solid var(--st); transition: transform .1s;
 }
 @media (prefers-color-scheme: dark) { .kid-card { background: #2a2f3a; color: #f4f6fb; } }
 .kid-card:active { transform: scale(.96); }
+.kid-card.col-checking { --st: #e1a100; }
+.kid-card.col-done { --st: #00b894; }
 .kid-card.is-done { opacity: .75; }
 .kid-card-icon {
   flex: 0 0 auto; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center;
-  font-size: 2.6rem; background: color-mix(in srgb, var(--cat) 16%, #fff);
+  font-size: 2.6rem; background: rgba(0,0,0,.05);
 }
+@media (prefers-color-scheme: dark) { .kid-card-icon { background: rgba(255,255,255,.08); } }
 .kid-card-title { flex: 1; font-size: 1.15rem; font-weight: 800; line-height: 1.15; }
 .kid-card-go { font-size: 1.4rem; color: #b2bec3; }
 .kid-card-check { font-size: 1.8rem; color: #00b894; font-weight: 900; }
@@ -744,9 +768,9 @@ body.kidmode-on { overflow: hidden; }
 .kid-focus {
   position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column;
   padding: max(18px, env(safe-area-inset-top)) 22px 30px; animation: kidpop .2s;
-  background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cat) 25%, #fff), #f7f9ff 60%);
+  background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--c) 22%, #fff), #f7f9ff 60%);
 }
-@media (prefers-color-scheme: dark) { .kid-focus { background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--cat) 40%, #232838), #1c2230 60%); } }
+@media (prefers-color-scheme: dark) { .kid-focus { background: radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--c) 40%, #232838), #1c2230 60%); } }
 @keyframes kidpop { from { transform: scale(.96); opacity: 0; } }
 .kid-focus-back { align-self: flex-start; width: 58px; height: 58px; border-radius: 20px; border: none; cursor: pointer; font-size: 1.6rem; background: #ffffffcc; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
 .kid-focus-inner { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }

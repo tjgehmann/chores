@@ -18,17 +18,21 @@
     { id: 'leo',   name: 'Leonard',  short: 'Leo',  emoji: '🚀', color: '#1f7a49', kind: 'child' },
   ];
 
-  // --- Kategorien (für Farben / Filter) ---------------------------------
+  // --- Kategorien -------------------------------------------------------
+  // Bewusst OHNE Farbe: Die Kategorie wird durch Emoji + Text getragen.
+  // Farbe auf der Aufgabenkarte bedeutet ausschließlich den Status
+  // (offen / zur Abnahme / abgenommen / zurückgegeben / Vertretung) –
+  // sonst konkurrieren auf einer Karte drei Farbsysteme gleichzeitig.
   CHORES.CATEGORIES = {
-    kueche:   { label: 'Küche',       emoji: '🍽️', color: '#f39c12' },
-    wohnen:   { label: 'Wohnen',      emoji: '🛋️', color: '#5f27cd' },
-    ordnung:  { label: 'Ordnung',     emoji: '🧸', color: '#00cec9' },
-    draussen: { label: 'Draußen',     emoji: '🌳', color: '#27ae60' },
-    tiere:    { label: 'Tiere & Pflanzen', emoji: '🪴', color: '#16a085' },
-    baby:     { label: 'Wäsche & Bad', emoji: '🧺', color: '#2980b9' },
-    einkauf:  { label: 'Einkauf & Orga', emoji: '🛒', color: '#8e44ad' },
-    spass:    { label: 'Spaß-Job',    emoji: '🎉', color: '#e84393' },
-    selbst:   { label: 'Ich selbst',  emoji: '🪥', color: '#ff7675' },
+    kueche:   { label: 'Küche',       emoji: '🍽️' },
+    wohnen:   { label: 'Wohnen',      emoji: '🛋️' },
+    ordnung:  { label: 'Ordnung',     emoji: '🧸' },
+    draussen: { label: 'Draußen',     emoji: '🌳' },
+    tiere:    { label: 'Tiere & Pflanzen', emoji: '🪴' },
+    baby:     { label: 'Wäsche & Bad', emoji: '🧺' },
+    einkauf:  { label: 'Einkauf & Orga', emoji: '🛒' },
+    spass:    { label: 'Spaß-Job',    emoji: '🎉' },
+    selbst:   { label: 'Ich selbst',  emoji: '🪥' },
   };
 
   // Wochentage: 0 = Sonntag … 6 = Samstag

@@ -140,7 +140,7 @@
 
   function taskCard(i, ctx) {
     const t = i.task;
-    const cat = CAT[t.category] || { color: '#999', emoji: '•', label: '' };
+    const cat = CAT[t.category] || { emoji: '•', label: '' };
     const shared = i.assignees.length > 1;
     const isKid = i.assignees.some(id => (S.member(id) || {}).kind === 'child');
     const owner = S.member(i.assignees[0]);
@@ -156,13 +156,13 @@
       statusNote = `<div class="reject-note">↩︎ Zurückgegeben von ${by ? by.emoji + ' ' + esc(by.short) : 'der Abnahme'}${i.rejection.reason ? `: „${esc(i.rejection.reason)}“` : ''}<br><span class="small">Bitte nochmal machen und wieder auf „fertig" tippen.</span></div>`;
     }
     const checkIcon = i.done ? '✔' : (i.pending ? '⏳' : '');
-    const card = el(`<div class="task status-${i.status} ${i.needsCover ? 'cover' : ''} ${isKid ? 'kidtask' : ''}" style="--cat:${cat.color}${owner ? ';--own:' + owner.color : ''}">
+    const card = el(`<div class="task status-${i.status} ${i.needsCover ? 'cover' : ''} ${isKid ? 'kidtask' : ''}"${owner ? ` style="--own:${owner.color}"` : ''}>
       <button class="check" title="${i.pending ? 'Zurückziehen' : (i.done ? 'Rückgängig' : 'Als fertig melden')}">${checkIcon}</button>
       <div class="task-icon">${t.emoji}${owner && !shared ? `<span class="owner-badge" title="${esc(owner.name)}">${owner.emoji}</span>` : ''}</div>
       <div class="task-body">
         <div class="task-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${i.rotates ? '<span class="rottag" title="Wechselaufgabe – rotiert wöchentlich">🔄</span>' : ''}${esc(t.title)}</div>
         <div class="task-meta">
-          <span class="cat" style="--c:${cat.color}">${cat.emoji} ${cat.label}</span>
+          <span class="cat">${cat.emoji} ${cat.label}</span>
           ${shared ? '<span class="cat shared">👥 gemeinsam</span>' : ''}
           ${i.pending ? '<span class="cat pendingtag">⏳ zur Abnahme</span>' : ''}
           ${i.rejected ? '<span class="cat rejecttag">↩︎ zurück</span>' : ''}
@@ -238,8 +238,7 @@
       const list = dayEl.querySelector('.agenda-day-list');
       if (!insts.length) list.appendChild(el('<div class="empty small">Frei 🎈</div>'));
       insts.forEach(i => {
-        const cat = CAT[i.task.category] || { color: '#999' };
-        const pill = el(`<button class="agenda-pill status-${i.status}" style="--cat:${cat.color}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}${i.pending ? ' – wartet auf Abnahme' : ''}">
+        const pill = el(`<button class="agenda-pill status-${i.status}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}${i.pending ? ' – wartet auf Abnahme' : ''}">
           <span class="agenda-pill-emoji">${i.pending ? '⏳' : (i.rejected ? '↩︎' : i.task.emoji)}</span>
           <span class="agenda-pill-title">${esc(i.task.title)}</span>
           <span class="agenda-pill-who">${i.rotates ? '🔄 ' : ''}${i.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
@@ -266,9 +265,8 @@
       const msec = el(`<div class="card"><h3>📆 Diesen Monat</h3><div class="agenda-day-list"></div></div>`);
       const list = msec.querySelector('.agenda-day-list');
       monthly.sort((a, b) => a.iso.localeCompare(b.iso)).forEach(({ iso, i }) => {
-        const cat = CAT[i.task.category] || { color: '#999' };
         const dt = D.parse(iso);
-        const pill = el(`<button class="agenda-pill status-${i.status}" style="--cat:${cat.color}">
+        const pill = el(`<button class="agenda-pill status-${i.status}">
           <span class="agenda-pill-emoji">${i.done ? '✔' : i.task.emoji}</span>
           <span class="agenda-pill-title">${esc(i.task.title)}</span>
           <span class="agenda-pill-who">${dt.getDate()}. ${D.MONTHS[month].slice(0, 3)}</span>
@@ -401,7 +399,7 @@
         c.doneBy.every(id => (S.member(id) || {}).kind === 'child');
       const PRAISE = ['Ganz allein geschafft! 💪', 'Du hast an alles gedacht! 🌟',
         'Richtig gründlich gemacht! 🔍', 'Das ging ja schnell! ⚡'];
-      const item = el(`<div class="rateitem ${overdue ? 'overdue' : ''}" style="--cat:${(CAT[task.category] || {}).color || '#999'}">
+      const item = el(`<div class="rateitem ${overdue ? 'overdue' : ''}">
         <div class="ri-head">
           <span class="ri-emoji">${task.emoji}</span>
           <div>
@@ -568,13 +566,12 @@
       const sec = el(`<div class="manage-group"><h3 class="section">${groups[g]} (${items.length})</h3><div class="manage-list"></div></div>`);
       const list = sec.querySelector('.manage-list');
       items.forEach(t => {
-        const cat = CAT[t.category] || {};
         const freq = t.frequency === 'daily' ? (t.days ? 'an bestimmten Tagen' : 'täglich')
           : t.frequency === 'weekly' ? 'wöchentlich' : 'monatlich';
         const who = t.rotate
           ? '🔄 rotiert: ' + S.rotationPool(t).map(id => (S.member(id) || {}).short).join(' ↔ ')
           : t.assignees.map(id => (S.member(id) || {}).short).join(', ');
-        const row = el(`<div class="manage-row" style="--cat:${cat.color || '#999'}">
+        const row = el(`<div class="manage-row">
           <span class="mr-emoji">${t.emoji}</span>
           <div class="mr-main">
             <div class="mr-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${t.rotate ? '<span class="rottag">🔄</span>' : ''}${esc(t.title)}</div>
