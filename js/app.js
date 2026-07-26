@@ -13,8 +13,7 @@
   const NAV = [
     { id: 'kids',     label: 'Kinder',       icon: '🧒', kid: true },
     { id: 'today',    label: 'Heute',        icon: '📅' },
-    { id: 'week',     label: 'Woche',        icon: '🗓️' },
-    { id: 'month',    label: 'Monat',        icon: '📆' },
+    { id: 'calendar', label: 'Kalender',     icon: '🗓️' },
     { id: 'stats',    label: 'Statistik',    icon: '🏆' },
     { id: 'shop',     label: 'Shop',         icon: '🎁' },
     { id: 'ratings',  label: 'Abnahme',      icon: '✅' },

@@ -197,13 +197,19 @@
   }
 
   /* =====================================================================
-     WOCHE
+     KALENDER
+     Eine Ansicht statt zweier Raster: die Woche als chronologische Liste
+     (nur Tage mit tatsächlichem Inhalt fallen ins Gewicht), darunter die
+     wenigen monatlichen Aufgaben als Liste und der Monats-Punktestand.
+     Ein leeres 7×5-Raster für eine Handvoll Monatsaufgaben kostet mehr
+     Aufmerksamkeit, als es an Information liefert – wichtiger als "wann"
+     ist meist "was steht noch offen".
      ===================================================================== */
-  UI.week = function (root, ctx) {
+  UI.calendar = function (root, ctx) {
     const days = D.weekDays(ctx.date);
     const wrap = el(`<div class="view">
       <div class="view-head">
-        <div><h2>Wochenansicht</h2><div class="subtle">${esc(D.weekLabel(ctx.date))}</div></div>
+        <div><h2>Kalender</h2><div class="subtle">${esc(D.weekLabel(ctx.date))}</div></div>
         <div class="daynav">
           <button class="btn ghost" data-w="-7">◀ Woche</button>
           <button class="btn ghost" data-w="today">Diese Woche</button>
@@ -216,96 +222,66 @@
       ctx.setDate(v === 'today' ? D.today() : D.addDays(ctx.date, Number(v)));
     }));
 
-    const grid = el('<div class="weekgrid"></div>');
+    const agenda = el('<div class="agenda"></div>');
     days.forEach(iso => {
       const dt = D.parse(iso);
       const insts = S.instancesFor(iso);
       const isToday = iso === D.today();
       const doneCount = insts.filter(x => x.done).length;
-      const col = el(`<div class="wday ${isToday ? 'today' : ''}">
-        <div class="wday-head">
-          <div class="wday-name">${D.WEEKDAY_SHORT[dt.getDay()]}</div>
-          <div class="wday-num">${dt.getDate()}.</div>
-          <div class="wday-count">${doneCount}/${insts.length}</div>
+      const dayEl = el(`<div class="agenda-day ${isToday ? 'today' : ''}">
+        <div class="agenda-day-head">
+          <span class="agenda-day-name">${isToday ? 'Heute – ' : ''}${D.WEEKDAY_LONG[dt.getDay()]}, ${dt.getDate()}. ${D.MONTHS[dt.getMonth()]}</span>
+          ${insts.length ? `<span class="agenda-day-count">${doneCount}/${insts.length}</span>` : ''}
         </div>
-        <div class="wday-tasks"></div>
+        <div class="agenda-day-list"></div>
       </div>`);
-      const list = col.querySelector('.wday-tasks');
-      if (!insts.length) list.appendChild(el('<div class="empty small">–</div>'));
+      const list = dayEl.querySelector('.agenda-day-list');
+      if (!insts.length) list.appendChild(el('<div class="empty small">Frei 🎈</div>'));
       insts.forEach(i => {
         const cat = CAT[i.task.category] || { color: '#999' };
-        const pill = el(`<button class="wpill status-${i.status}" style="--cat:${cat.color}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}${i.pending ? ' – wartet auf Abnahme' : ''}">
-          <span class="wpill-emoji">${i.pending ? '⏳' : (i.rejected ? '↩︎' : i.task.emoji)}</span>
-          <span class="wpill-title">${esc(i.task.title)}</span>
-          <span class="wpill-who">${i.rotates ? '🔄' : ''}${i.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
+        const pill = el(`<button class="agenda-pill status-${i.status}" style="--cat:${cat.color}" title="${esc(i.task.title)}${i.rotates ? ' (rotiert)' : ''}${i.pending ? ' – wartet auf Abnahme' : ''}">
+          <span class="agenda-pill-emoji">${i.pending ? '⏳' : (i.rejected ? '↩︎' : i.task.emoji)}</span>
+          <span class="agenda-pill-title">${esc(i.task.title)}</span>
+          <span class="agenda-pill-who">${i.rotates ? '🔄 ' : ''}${i.assignees.map(id => (S.member(id) || {}).emoji || '').join('')}</span>
         </button>`);
         pill.addEventListener('click', () => { S.toggleDone(i.task.id, iso, i.member); ctx.render(); });
         list.appendChild(pill);
       });
-      col.querySelector('.wday-head').addEventListener('click', () => { ctx.setDate(iso); ctx.go('today'); });
-      grid.appendChild(col);
+      dayEl.querySelector('.agenda-day-head').addEventListener('click', () => { ctx.setDate(iso); ctx.go('today'); });
+      agenda.appendChild(dayEl);
     });
-    wrap.appendChild(grid);
-    root.appendChild(wrap);
-  };
+    wrap.appendChild(agenda);
 
-  /* =====================================================================
-     MONAT
-     ===================================================================== */
-  UI.month = function (root, ctx) {
+    // Monatliche Aufgaben des aktuellen Monats als kurze Liste (statt Raster)
     const base = D.parse(ctx.date);
     const year = base.getFullYear(), month = base.getMonth();
-    const first = new Date(year, month, 1);
-    const startOffset = (first.getDay() + 6) % 7; // Montag-Start
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthDays = Array.from({ length: daysInMonth }, (_, d) => D.iso(new Date(year, month, d + 1)));
 
-    const wrap = el(`<div class="view">
-      <div class="view-head">
-        <div><h2>Monatsansicht</h2><div class="subtle">${D.MONTHS[month]} ${year}</div></div>
-        <div class="daynav">
-          <button class="btn ghost" data-m="-1">◀</button>
-          <button class="btn ghost" data-m="today">Aktueller Monat</button>
-          <button class="btn ghost" data-m="1">▶</button>
-        </div>
-      </div>
-    </div>`);
-    wrap.querySelector('[data-m="-1"]').addEventListener('click', () => ctx.setDate(D.iso(new Date(year, month - 1, 1))));
-    wrap.querySelector('[data-m="1"]').addEventListener('click', () => ctx.setDate(D.iso(new Date(year, month + 1, 1))));
-    wrap.querySelector('[data-m="today"]').addEventListener('click', () => ctx.setDate(D.today()));
-
-    const cal = el('<div class="calendar"></div>');
-    D.WEEKDAY_SHORT.slice(1).concat(D.WEEKDAY_SHORT[0]).forEach(n =>
-      cal.appendChild(el(`<div class="cal-dow">${n}</div>`)));
-
-    for (let i = 0; i < startOffset; i++) cal.appendChild(el('<div class="cal-cell empty"></div>'));
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const iso = D.iso(new Date(year, month, day));
-      const insts = S.instancesFor(iso);
-      const done = insts.filter(x => x.done).length;
-      const pct = insts.length ? Math.round(done / insts.length * 100) : 0;
-      const vac = S.members().filter(m => S.isOnVacation(m.id, iso));
-      const isToday = iso === D.today();
-      const cell = el(`<div class="cal-cell ${isToday ? 'today' : ''}">
-        <div class="cal-day">${day}</div>
-        <div class="cal-dots">${insts.slice(0, 6).map(x =>
-          `<span class="dot ${x.done ? 'done' : ''}" style="--cat:${(CAT[x.task.category] || {}).color || '#999'}"></span>`).join('')}
-          ${insts.length > 6 ? `<span class="more">+${insts.length - 6}</span>` : ''}</div>
-        <div class="cal-foot">
-          ${insts.length ? `<span class="cal-pct" style="--p:${pct}">${done}/${insts.length}</span>` : ''}
-          ${vac.map(m => `<span class="cal-vac" title="${esc(m.name)} Urlaub">🏖️${m.emoji}</span>`).join('')}
-        </div>
-      </div>`);
-      cell.addEventListener('click', () => { ctx.setDate(iso); ctx.go('today'); });
-      cal.appendChild(cell);
+    const monthly = [];
+    monthDays.forEach(iso => S.instancesFor(iso).forEach(i => {
+      if (i.task.frequency === 'monthly') monthly.push({ iso, i });
+    }));
+    if (monthly.length) {
+      const msec = el(`<div class="card"><h3>📆 Diesen Monat</h3><div class="agenda-day-list"></div></div>`);
+      const list = msec.querySelector('.agenda-day-list');
+      monthly.sort((a, b) => a.iso.localeCompare(b.iso)).forEach(({ iso, i }) => {
+        const cat = CAT[i.task.category] || { color: '#999' };
+        const dt = D.parse(iso);
+        const pill = el(`<button class="agenda-pill status-${i.status}" style="--cat:${cat.color}">
+          <span class="agenda-pill-emoji">${i.done ? '✔' : i.task.emoji}</span>
+          <span class="agenda-pill-title">${esc(i.task.title)}</span>
+          <span class="agenda-pill-who">${dt.getDate()}. ${D.MONTHS[month].slice(0, 3)}</span>
+        </button>`);
+        pill.addEventListener('click', () => { ctx.setDate(iso); ctx.go('today'); });
+        list.appendChild(pill);
+      });
+      wrap.appendChild(msec);
     }
-    wrap.appendChild(cal);
 
-    // Monats-Statistik kompakt
-    const days = [];
-    for (let d = 1; d <= daysInMonth; d++) days.push(D.iso(new Date(year, month, d)));
-    const stats = S.statsForDays(days);
-    const board = el('<div class="mini-board"><h3>🏅 Monats-Punkte</h3><div class="mini-rows"></div></div>');
+    // Monats-Punktestand kompakt
+    const stats = S.statsForDays(monthDays);
+    const board = el(`<div class="mini-board"><h3>🏅 Monats-Punkte (${D.MONTHS[month]})</h3><div class="mini-rows"></div></div>`);
     const rows = board.querySelector('.mini-rows');
     const max = Math.max(1, ...Object.values(stats).map(s => s.points));
     Object.values(stats).sort((a, b) => b.points - a.points).forEach(s => {

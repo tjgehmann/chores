@@ -8,17 +8,20 @@
   'use strict';
 
   // --- Familienmitglieder ------------------------------------------------
+  // Farben bewusst NICHT identisch mit Status-/Akzentfarben (--good, --warn,
+  // --accent) oder Kategoriefarben gewählt, sonst wirkt z. B. "abgenommen"
+  // (grün) oder "Vertretung nötig" (orange) wie Leos/Tonis Personenfarbe.
   CHORES.MEMBERS = [
-    { id: 'mama',  name: 'Mama',     short: 'Mama', emoji: '👩', color: '#e84393', kind: 'adult' },
+    { id: 'mama',  name: 'Mama',     short: 'Mama', emoji: '👩', color: '#c2255c', kind: 'adult' },
     { id: 'papa',  name: 'Papa',     short: 'Papa', emoji: '🧔', color: '#0984e3', kind: 'adult' },
-    { id: 'toni',  name: 'Antonia',  short: 'Toni', emoji: '🦄', color: '#e17055', kind: 'child' },
-    { id: 'leo',   name: 'Leonard',  short: 'Leo',  emoji: '🚀', color: '#00b894', kind: 'child' },
+    { id: 'toni',  name: 'Antonia',  short: 'Toni', emoji: '🦄', color: '#d35400', kind: 'child' },
+    { id: 'leo',   name: 'Leonard',  short: 'Leo',  emoji: '🚀', color: '#00967d', kind: 'child' },
   ];
 
   // --- Kategorien (für Farben / Filter) ---------------------------------
   CHORES.CATEGORIES = {
     kueche:   { label: 'Küche',       emoji: '🍽️', color: '#f39c12' },
-    wohnen:   { label: 'Wohnen',      emoji: '🛋️', color: '#6c5ce7' },
+    wohnen:   { label: 'Wohnen',      emoji: '🛋️', color: '#5f27cd' },
     ordnung:  { label: 'Ordnung',     emoji: '🧸', color: '#00cec9' },
     draussen: { label: 'Draußen',     emoji: '🌳', color: '#27ae60' },
     tiere:    { label: 'Tiere & Pflanzen', emoji: '🪴', color: '#16a085' },

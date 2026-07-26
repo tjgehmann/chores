@@ -34,8 +34,9 @@ sich aber jederzeit anpassen.
 - **Eltern-Sperre** 🔒 – die Eltern-Ansicht (Editor, Abnahme, Zurücksetzen) ist
   durch eine kleine Rechenaufgabe geschützt, die Vierjährige noch nicht lösen können.
 - **Heute** – alle Aufgaben des Tages, nach Person sortiert, mit Fortschrittsbalken. Antippen = erledigt.
-- **Wochenansicht** – die ganze Woche auf einen Blick (Mo–So).
-- **Monatsansicht** – Kalender mit Fortschritt pro Tag und Monats-Punktestand.
+- **Kalender** – die Woche als chronologische Liste (Mo–So, nur Tage mit
+  offenen Aufgaben fallen ins Gewicht) statt eines leeren Raster-Kalenders;
+  darunter die wenigen monatlichen Aufgaben und der Monats-Punktestand.
 - **Aufgaben für alle** – Kinderaufgaben (altersgerecht), Erwachsenen-Aufgaben und gemeinsame Aufgaben.
 - **Rotierende Aufgaben** 🔄 – manche Aufgaben wechseln wöchentlich reihum. Dabei
   gilt: **Eltern-Aufgaben rotieren nur zwischen Mama & Papa, Kinder-Aufgaben nur
