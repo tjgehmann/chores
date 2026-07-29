@@ -93,6 +93,18 @@ sich aber jederzeit anpassen.
   **nimmt sie ab** (mit Sternen und Lob 💚) oder **gibt sie mit Begründung zurück**
   (↩︎ Tipp 💡) – dann landet sie wieder bei „Zu tun" samt Hinweis, was noch fehlt.
   Punkte gibt es erst nach der Abnahme.
+- **Abnahme pro Aufgabe einstellbar** ⚡ – nicht alles braucht einen Prüf-Schritt.
+  Im Editor steht bei jeder Aufgabe **„Abnahme"** auf einem von zwei Werten:
+  - **✅ Jemand anderes nimmt ab** – der Weg oben (Standard).
+  - **⚡ Gilt sofort als erledigt** – Fertig-Tippen genügt, die Punkte zählen
+    sofort, die Aufgabe taucht in der Abnahme-Liste gar nicht erst auf.
+    Im Kinder-Modus gibt es dann direkt „Geschafft! 🎉" statt „wird geprüft 👀".
+
+  Startbelegung: **Morgen-Held, Abend-Held, Kita-Auspacker und alle Spaß-Jobs**
+  laufen ohne Abnahme (das Ergebnis sieht man ohnehin, ein Formalakt wäre nur
+  Bürokratie) – **„Zimmer aufräumen", Küche, Bad & Co.** werden abgenommen.
+  Alles jederzeit pro Aufgabe umschaltbar; wird die Abnahme abgeschaltet,
+  während noch Meldungen darauf warten, gelten diese sofort als erledigt.
 - **Spielerische Statistiken** – Punkte, Level, Serien (🔥 Streaks), Abzeichen
   und eine Wochen-Rangliste, die zum Mitmachen anspornt.
 - **Belohnungs- & Sticker-Shop** – erspielte Punkte gegen echte Belohnungen
@@ -186,7 +198,10 @@ python3 -m http.server 8000
   Abschnitt „Familie". Beim Entfernen bleiben Punkte und Verlauf erhalten;
   Aufgaben, die nur dieser Person gehörten, werden pausiert. (Der
   Startbestand für neue Installationen steht in `js/data.js` unter `MEMBERS`.)
-- **Standard-Aufgabenkatalog**: in `js/data.js` unter `DEFAULT_TASKS`.
+- **Standard-Aufgabenkatalog**: in `js/data.js` unter `DEFAULT_TASKS`. Ob eine
+  Aufgabe abgenommen werden muss, steuert dort das Feld `needsApproval`
+  (fehlt es, wird abgenommen); die Startbelegung setzt
+  `CHORES.defaultNeedsApproval`.
 - **Daten sichern / übertragen**: Zahnrad ⚙️ oben rechts → Sichern / Einlesen
   (JSON-Datei). So lassen sich die Daten z. B. auf ein anderes Gerät bringen.
   Die App merkt sich die letzte Sicherung und erinnert mit einem roten Punkt

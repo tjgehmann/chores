@@ -79,7 +79,7 @@
       goal: null,
       // Tageswahl der Kinder-Specials, Schlüssel `${taskId}|${dateIso}` -> memberId
       picks: {},
-      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true, individualV1: true, memberColorsV1: true }, // frische Installation: alles aktuell
+      migrations: { uniqueIconsV1: true, workflowV1: true, kidTasksV1: true, rebalanceV1: true, rewardsV1: true, individualV1: true, memberColorsV1: true, approvalV1: true }, // frische Installation: alles aktuell
       createdAt: D.today(),
     };
   }
@@ -195,6 +195,17 @@
           if (!c.status) c.status = c.done ? 'approved' : 'open';
         });
         state.migrations.workflowV1 = true;
+        S.save();
+      }
+      if (!state.migrations.approvalV1) {
+        // Abnahme ist ab jetzt pro Aufgabe einstellbar. Bestehende Aufgaben
+        // bekommen die Standardbelegung (data.js): persönliche Routinen und
+        // Spaß-Jobs zählen sofort, alles Übrige läuft weiter über die Abnahme.
+        const dflt = CHORES.defaultNeedsApproval || (() => true);
+        state.tasks.forEach(t => {
+          if (t.needsApproval === undefined) t.needsApproval = dflt(t);
+        });
+        state.migrations.approvalV1 = true;
         S.save();
       }
       if (!state.migrations.memberColorsV1) {
@@ -315,13 +326,31 @@
     },
     updateTask(id, patch) {
       const t = S.task(id);
-      if (t) { Object.assign(t, patch); S.save(); }
+      if (!t) return t;
+      Object.assign(t, patch);
+      // Wird die Abnahme abgeschaltet, während noch Meldungen darauf warten,
+      // blieben diese für immer in der Abnahme-Liste liegen. Sie gelten
+      // deshalb sofort als erledigt.
+      if (t.needsApproval === false) {
+        Object.values(state.completions).forEach(c => {
+          if (c.taskId === id && (c.status || 'open') === 'pending') {
+            c.status = 'approved'; c.done = true; c.selfApproved = true;
+            c.rater = null; c.rejection = null;
+          }
+        });
+      }
+      S.save();
       return t;
     },
     removeTask(id) {
       state.tasks = state.tasks.filter(t => t.id !== id);
       S.save();
     },
+
+    // Braucht diese Aufgabe eine Abnahme durch jemand anderen?
+    // Fehlt das Feld (alter Speicherstand, importierte Daten), gilt „ja" –
+    // der bisherige Weg bleibt damit der Standard.
+    needsApproval(task) { return !task || task.needsApproval !== false; },
 
     // Gilt eine Aufgabe an diesem Datum?
     taskOccursOn(task, iso) {
@@ -436,6 +465,7 @@
       // bei „jeder für sich" genau diese eine Person
       const assignees = indiv ? [memberId] : S.assigneesFor(task, iso);
       // Status: 'open' | 'pending' (zur Abnahme) | 'approved' (abgenommen) | 'rejected' (zurückgegeben)
+      // Aufgaben ohne Abnahme springen beim Melden direkt auf 'approved'.
       const status = c ? (c.status || 'open') : 'open';
       const active = status === 'open' || status === 'rejected'; // muss (noch) getan werden
       // Wer ist wegen Urlaub verhindert?
@@ -457,6 +487,8 @@
         doneAt: c && c.doneAt,
         rating: c && c.rating,
         rater: c && c.rater,      // wer soll abnehmen/bewerten (zufällig)
+        needsApproval: S.needsApproval(task), // braucht die Aufgabe eine Abnahme?
+        selfApproved: !!(c && c.selfApproved), // ohne Abnahme selbst abgehakt
         coverBy: covered,          // Vertretung wegen Urlaub
         onVacation,
         needsCover: onVacation.length > 0 && covered.length === 0 && active,
@@ -464,8 +496,9 @@
     },
 
     /* --------------------- Workflow: melden / zurückziehen --------------- */
-    // Klick auf das Häkchen: offen/zurückgegeben -> zur Abnahme melden;
-    // wartend/abgenommen -> wieder zurückziehen (rückgängig).
+    // Klick auf das Häkchen: offen/zurückgegeben -> zur Abnahme melden bzw.
+    // (bei Aufgaben ohne Abnahme) direkt abhaken; wartend/abgenommen ->
+    // wieder zurückziehen (rückgängig).
     // memberId ist nur bei „jeder für sich"-Aufgaben nötig
     toggleDone(taskId, iso, memberId) {
       const c = state.completions[S.ckey(taskId, iso, memberId)];
@@ -474,7 +507,10 @@
       else S.withdraw(taskId, iso, memberId);
     },
 
-    // Aufgabe als erledigt melden -> Status „zur Abnahme" (pending)
+    // Aufgabe als erledigt melden -> Status „zur Abnahme" (pending).
+    // Aufgaben ohne Abnahme (task.needsApproval === false) sind mit dem
+    // Melden fertig: Status „abgenommen", Punkte zählen sofort. Es wird
+    // niemand ausgelost und es gibt keine Sterne/Bewertung.
     submit(taskId, iso, memberId) {
       const task = S.task(taskId);
       const indiv = !!(task.individual && memberId);
@@ -484,14 +520,16 @@
       const doers = assignees.filter(id => !S.isOnVacation(id, iso));
       const cover = existing && existing.coverBy ? existing.coverBy : [];
       const allDoers = Array.from(new Set([...doers, ...cover]));
+      const needs = S.needsApproval(task);
       state.completions[key] = {
         taskId, date: iso,
         member: indiv ? memberId : undefined, // „jeder für sich": wessen Karte
-        status: 'pending', done: false,
+        status: needs ? 'pending' : 'approved', done: !needs,
+        selfApproved: !needs,
         doneBy: allDoers.length ? allDoers : assignees.slice(),
         doneAt: new Date().toISOString(),
         coverBy: cover,
-        rater: S.pickRandomRater(allDoers),  // wer nimmt ab (zufällig)
+        rater: needs ? S.pickRandomRater(allDoers) : null, // wer nimmt ab (zufällig)
         rating: null,
         rejection: null,
       };
