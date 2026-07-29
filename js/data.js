@@ -44,6 +44,8 @@
   // assignees: Standard-Zuständige (mehrere = gemeinsame Aufgabe)
   // group: 'child' | 'adult' | 'family'
   // fun: true  -> ausgefallener Spaß-Job
+  // needsApproval: false -> gilt sofort als erledigt (ohne Abnahme durch
+  //   jemand anderen). Fehlt das Feld, wird abgenommen (Standard).
 
   let _id = 0;
   const t = (o) => Object.assign({ id: 'task_' + (++_id) }, o);
@@ -206,6 +208,24 @@
   CHORES.DEFAULT_TASKS = CHORES.DEFAULT_TASKS
     .concat(CHORES.TASKS_UPDATE_1)
     .concat(CHORES.TASKS_UPDATE_2);
+
+  /* =======================================================================
+     ABNAHME JA/NEIN – Standardbelegung.
+     Nicht jede Aufgabe braucht eine formale Abnahme: Beim Morgen-Held sieht
+     man sofort, ob das Kind angezogen ist – ein Prüf-Schritt in der App wäre
+     hier nur Bürokratie. „Zimmer aufräumen" dagegen lohnt den Blick von
+     jemand anderem. Faustregel für die Startbelegung:
+       - persönliche Routinen (Kategorie „Ich selbst") -> ohne Abnahme
+       - Spaß-Jobs (fun) -> ohne Abnahme (es geht um die Freude, nicht um Qualität)
+       - alles Übrige -> mit Abnahme
+     Pro Aufgabe im Editor jederzeit umstellbar.
+     ======================================================================= */
+  CHORES.NO_APPROVAL_TITLES = ['Kita-Auspacker'];
+  CHORES.defaultNeedsApproval = (t) =>
+    !(t.category === 'selbst' || t.fun || CHORES.NO_APPROVAL_TITLES.includes(t.title));
+  CHORES.DEFAULT_TASKS.forEach(t => {
+    if (t.needsApproval === undefined) t.needsApproval = CHORES.defaultNeedsApproval(t);
+  });
 
   /* =======================================================================
      BELOHNUNGEN – gegen erspielte Punkte einlösbar (echte Belohnungen).

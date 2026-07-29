@@ -37,6 +37,7 @@ function seedFn() {
       if (rand() > 0.79) return;
       S.submit(i.task.id, iso, i.member);
       const inst = S.instance(i.task, iso, i.member);
+      if (!inst.pending) return; // Aufgabe ohne Abnahme: mit dem Melden fertig
       S.approve(i.task.id, iso, {
         by: inst.rater, stars: rand() < 0.55 ? 5 : 4,
         comment: LOB[Math.floor(rand() * LOB.length)], kind: 'praise', member: i.member,
@@ -47,10 +48,12 @@ function seedFn() {
   // Heute: eine Aufgabe abgenommen, je eine Abnahme offen pro Kind.
   // Gemeinsame Aufgaben (z. B. „Spielzeug aufräumen") erscheinen bei beiden
   // Kindern – dieselbe Instanz zweimal anzufassen würde die Abnahme wieder
-  // zurücksetzen, daher überschneidungsfrei auswählen.
+  // zurücksetzen, daher überschneidungsfrei auswählen. Nur Aufgaben MIT
+  // Abnahme, sonst gibt es nichts zu zeigen.
   const used = new Set();
   const pick = id => S.instancesFor(today)
-    .find(i => i.assignees.includes(id) && !used.has(i.key) && (used.add(i.key), true));
+    .find(i => i.assignees.includes(id) && i.needsApproval &&
+      !used.has(i.key) && (used.add(i.key), true));
   const done = pick('toni'), p1 = pick('toni'), p2 = pick('leo');
   S.submit(done.task.id, today, done.member);
   S.approve(done.task.id, today, { by: 'mama', stars: 5, comment: 'Ganz allein geschafft!', kind: 'praise', member: done.member });

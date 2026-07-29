@@ -62,7 +62,7 @@
     const pct = insts.length ? Math.round(doneCount / insts.length * 100) : 0;
     wrap.appendChild(el(`<div class="dayprogress">
       <div class="bar"><span style="width:${pct}%"></span></div>
-      <div class="subtle">${doneCount} / ${insts.length} abgenommen · ${pct}%${pendingCount ? ` · <b style="color:var(--warn)">${pendingCount} wartet auf Abnahme</b>` : ''}</div>
+      <div class="subtle">${doneCount} / ${insts.length} erledigt · ${pct}%${pendingCount ? ` · <b style="color:var(--warn)">${pendingCount} wartet auf Abnahme</b>` : ''}</div>
     </div>`));
 
     // Abend-Check: ab 18 Uhr sanft auf offene Aufgaben des Tages hinweisen
@@ -83,7 +83,7 @@
           : '<div class="weekcard-ok">Nichts mehrfach liegen geblieben – läuft! 💪</div>';
         wrap.appendChild(el(`<div class="weekcard">
           <div class="weekcard-head">📒 Wochen-Bilanz (${D.weekLabel(iso)})</div>
-          <div>${r.done} von ${r.total} Aufgaben abgenommen (<b>${r.pct} %</b>)${r.pending ? ` · ⏳ ${r.pending} warten noch auf Abnahme` : ''}.</div>
+          <div>${r.done} von ${r.total} Aufgaben erledigt (<b>${r.pct} %</b>)${r.pending ? ` · ⏳ ${r.pending} warten noch auf Abnahme` : ''}.</div>
           ${lag}
         </div>`));
       }
@@ -126,7 +126,7 @@
           <div class="avatar">${m.emoji}</div>
           <div>
             <div class="lane-name">${esc(m.name)}</div>
-            <div class="subtle">${laneDone}/${mine.length} abgenommen${lanePending ? ` · ⏳ ${lanePending}` : ''}${S.isOnVacation(m.id, iso) ? ' · 🏖️ Urlaub' : ''}</div>
+            <div class="subtle">${laneDone}/${mine.length} erledigt${lanePending ? ` · ⏳ ${lanePending}` : ''}${S.isOnVacation(m.id, iso) ? ' · 🏖️ Urlaub' : ''}</div>
           </div>
         </div>
         <div class="lane-tasks"></div>
@@ -153,13 +153,19 @@
       statusNote = `<div class="await">⏳ Zur Abnahme – ${rater ? rater.emoji + ' ' + esc(rater.name) : 'jemand'} prüft noch</div>`;
     } else if (i.done && i.rating) {
       statusNote = ratingSummary(i);
+    } else if (i.done) {
+      // Ohne Abnahme abgehakt: kurz sagen, dass hier niemand mehr prüft.
+      statusNote = '<div class="await">✔ Selbst abgehakt – diese Aufgabe braucht keine Abnahme</div>';
     } else if (i.rejected && i.rejection) {
       const by = S.member(i.rejection.by);
       statusNote = `<div class="reject-note">↩︎ Zurückgegeben von ${by ? by.emoji + ' ' + esc(by.short) : 'der Abnahme'}${i.rejection.reason ? `: „${esc(i.rejection.reason)}“` : ''}<br><span class="small">Bitte nochmal machen und wieder auf „fertig" tippen.</span></div>`;
     }
     const checkIcon = i.done ? '✔' : (i.pending ? '⏳' : '');
+    const checkTitle = i.pending ? 'Zurückziehen'
+      : i.done ? 'Rückgängig'
+      : (i.needsApproval ? 'Als fertig melden' : 'Als erledigt abhaken');
     const card = el(`<div class="task status-${i.status} ${i.needsCover ? 'cover' : ''} ${isKid ? 'kidtask' : ''}"${owner ? ` style="--own:${owner.color}"` : ''}>
-      <button class="check" title="${i.pending ? 'Zurückziehen' : (i.done ? 'Rückgängig' : 'Als fertig melden')}">${checkIcon}</button>
+      <button class="check" title="${checkTitle}">${checkIcon}</button>
       <div class="task-icon">${t.emoji}${owner && !shared ? `<span class="owner-badge" title="${esc(owner.name)}">${owner.emoji}</span>` : ''}</div>
       <div class="task-body">
         <div class="task-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${i.rotates ? '<span class="rottag" title="Wechselaufgabe – rotiert wöchentlich">🔄</span>' : ''}${esc(t.title)}</div>
@@ -168,6 +174,7 @@
           ${shared ? '<span class="cat shared">👥 gemeinsam</span>' : ''}
           ${i.pending ? '<span class="cat pendingtag">⏳ zur Abnahme</span>' : ''}
           ${i.rejected ? '<span class="cat rejecttag">↩︎ zurück</span>' : ''}
+          ${!i.needsApproval && !i.done ? '<span class="cat noapprtag" title="Zählt sofort – niemand muss abnehmen">⚡ ohne Abnahme</span>' : ''}
           <span class="pts">+${t.points}</span>
         </div>
         ${t.description ? `<div class="task-desc">${esc(t.description)}</div>` : ''}
@@ -378,7 +385,7 @@
         <div class="subtle">${pending.length} Aufgabe(n) warten auf Abnahme</div></div></div>
     </div>`);
 
-    wrap.appendChild(el(`<div class="hint">🎲 Jede gemeldete Aufgabe wird von einem <b>zufällig ausgelosten</b> Familienmitglied <b>abgenommen</b>. Passt alles → <b>Annehmen</b> mit Sternen und Lob. Passt es noch nicht → <b>Zurückgeben</b> mit einem Grund; dann landet die Aufgabe wieder bei „Zu tun".</div>`));
+    wrap.appendChild(el(`<div class="hint">🎲 Jede gemeldete Aufgabe wird von einem <b>zufällig ausgelosten</b> Familienmitglied <b>abgenommen</b>. Passt alles → <b>Annehmen</b> mit Sternen und Lob. Passt es noch nicht → <b>Zurückgeben</b> mit einem Grund; dann landet die Aufgabe wieder bei „Zu tun".<br>⚡ Aufgaben, die im Editor auf <b>„Gilt sofort als erledigt"</b> stehen (z. B. Morgen-Held), tauchen hier gar nicht erst auf.</div>`));
 
     if (!pending.length) {
       wrap.appendChild(el('<div class="empty big">Alles abgenommen! 🎉<br><span class="subtle">Nichts offen.</span></div>'));
@@ -583,7 +590,7 @@
           <span class="mr-emoji">${t.emoji}</span>
           <div class="mr-main">
             <div class="mr-title">${t.fun ? '<span class="funtag">Spaß</span>' : ''}${t.rotate ? '<span class="rottag">🔄</span>' : ''}${esc(t.title)}</div>
-            <div class="subtle small">${freq} · +${t.points} · ${who}</div>
+            <div class="subtle small">${freq} · +${t.points} · ${who}${S.needsApproval(t) ? '' : ' · ⚡ ohne Abnahme'}</div>
           </div>
           <button class="btn tiny mr-edit">Bearbeiten</button>
           <button class="btn tiny danger mr-del">✕</button>
@@ -642,7 +649,8 @@
     const isNew = !task;
     task = task || { title: '', emoji: '⭐', category: 'ordnung', frequency: 'daily',
       days: null, dayOfMonth: 1, date: D.today(), assignees: [], points: 10, group: 'family',
-      description: '', fun: false, rotate: false };
+      description: '', fun: false, rotate: false, needsApproval: true };
+    const needsApproval = S.needsApproval(task);
     const catOpts = Object.entries(CAT).map(([k, v]) =>
       `<option value="${k}" ${k === task.category ? 'selected' : ''}>${v.emoji} ${v.label}</option>`).join('');
     const dayBtns = D.WEEKDAY_SHORT.map((n, idx) =>
@@ -681,6 +689,11 @@
         <label class="t-rotwrap"><input type="checkbox" class="t-rotate" ${task.rotate ? 'checked' : ''}> 🔄 Wöchentlich rotieren (reihum abwechseln)</label>
         <div class="t-rothint subtle small"></div>
         <label class="t-rotwrap"><input type="checkbox" class="t-individual" ${task.individual ? 'checked' : ''}> 👤 Jeder für sich (jede zuständige Person hakt einzeln ab und bekommt eigene Punkte)</label>
+        <label>Abnahme<select class="t-approval">
+          <option value="required" ${needsApproval ? 'selected' : ''}>✅ Jemand anderes nimmt ab</option>
+          <option value="none" ${needsApproval ? '' : 'selected'}>⚡ Gilt sofort als erledigt</option>
+        </select></label>
+        <div class="t-apprhint subtle small"></div>
         <div class="t-people">Zuständig (mehrere möglich = gemeinsam)
           <div class="pickers">${S.members().map(m =>
             `<button type="button" class="picker ${task.assignees.includes(m.id) ? 'on' : ''}" data-id="${m.id}" style="--c:${m.color}">${m.emoji} ${esc(m.short)}</button>`).join('')}</div>
@@ -739,6 +752,16 @@
         grpSel.addEventListener('change', syncRot);
         syncRot();
 
+        // Abnahme ja/nein im Klartext erklären – der Unterschied entscheidet,
+        // wann es Punkte gibt.
+        const apprSel = box.querySelector('.t-approval');
+        const syncAppr = () => {
+          box.querySelector('.t-apprhint').textContent = apprSel.value === 'none'
+            ? 'Wer fertig tippt, ist fertig: Punkte gibt es sofort, niemand muss prüfen. Gut für Routinen wie „Morgen-Held“, bei denen man das Ergebnis ohnehin sieht.'
+            : 'Nach dem Melden schaut ein ausgelostes Familienmitglied drüber und nimmt ab oder gibt zurück. Punkte gibt es erst nach der Abnahme – gut für „Zimmer aufräumen“ & Co.';
+        };
+        apprSel.addEventListener('change', syncAppr); syncAppr();
+
         box.querySelector('.modal-save').addEventListener('click', () => {
           const title = box.querySelector('.t-title').value.trim();
           if (!title) { box.querySelector('.t-title').focus(); return; }
@@ -754,6 +777,7 @@
             fun: box.querySelector('.t-fun').checked,
             rotate: freq === 'once' ? false : rotate,
             individual: box.querySelector('.t-individual').checked,
+            needsApproval: box.querySelector('.t-approval').value !== 'none',
             rotationOffset: task.rotationOffset || 0,
             assignees: Array.from(assignees),
             days: freq === 'monthly' ? null : Array.from(days).sort(),
@@ -794,8 +818,9 @@
           <div class="pickers">${S.members().map(m =>
             `<button type="button" class="picker" data-id="${m.id}" style="--c:${m.color}">${m.emoji} ${esc(m.short)}</button>`).join('')}</div>
         </div>
+        <label class="t-funwrap"><input type="checkbox" class="q-approval" checked> ✅ Muss abgenommen werden</label>
         <p class="subtle small">Die Aufgabe gilt nur ${esc(wann)} und wiederholt sich nicht.
-          Punkte gibt es wie immer erst nach der Abnahme.</p>
+          <span class="q-note"></span></p>
         <p class="q-warn small"></p>
       </div>`,
       (box, close) => {
@@ -811,6 +836,13 @@
           b.classList.toggle('on');
           box.querySelector('.q-warn').textContent = '';
         }));
+        const apprChk = box.querySelector('.q-approval');
+        const syncAppr = () => {
+          box.querySelector('.q-note').textContent = apprChk.checked
+            ? 'Punkte gibt es wie immer erst nach der Abnahme.'
+            : 'Punkte gibt es sofort beim Abhaken – niemand muss prüfen.';
+        };
+        apprChk.addEventListener('change', syncAppr); syncAppr();
         const titleEl = box.querySelector('.q-title');
         titleEl.focus();
 
@@ -836,6 +868,7 @@
             fun: false,
             rotate: false,
             individual: false,
+            needsApproval: apprChk.checked,
             rotationOffset: 0,
             assignees: Array.from(assignees),
             days: null,

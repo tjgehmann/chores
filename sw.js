@@ -10,7 +10,7 @@
 
    Die CACHE-Version trotzdem bei Änderungen hochzählen – sie räumt alte
    Bestände weg. Vergessen ist seit „Netz zuerst" aber nicht mehr fatal. */
-const CACHE = 'familien-dashboard-v22';
+const CACHE = 'familien-dashboard-v23';
 const CODE = /\.(?:js|css)$/;   // zusammen mit Navigationen: der App-Code
 const NET_TIMEOUT = 3000;       // ms, danach lieber der Cache als warten
 const ASSETS = [

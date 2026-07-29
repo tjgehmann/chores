@@ -338,16 +338,21 @@
       speak(t.title + '. ' + (t.description || '') + (i.rejected && i.rejection && i.rejection.reason ? ' Nochmal: ' + i.rejection.reason : '')));
     focus.querySelector('.kid-done-btn').addEventListener('click', () => {
       stopTimer();
-      S.submit(t.id, i.date, i.member);   // als fertig melden -> wartet auf Abnahme
+      S.submit(t.id, i.date, i.member);   // fertig melden (bzw. direkt abhaken)
       chime(); confetti();
-      const rater = S.member(S.instance(t, i.date, i.member).rater);
+      // Aufgaben ohne Abnahme sind mit dem Tippen fertig – dann kein „wird
+      // geprüft", sondern gleich der volle Jubel samt Sternen.
+      const after = S.instance(t, i.date, i.member);
+      const rater = S.member(after.rater);
       const yay = el(`<div class="kid-yay">
         <div class="kid-yay-avatar">${(S.member(state.child) || {}).emoji || '🎉'}</div>
-        <div class="kid-yay-text">Toll gemeldet! 🎉</div>
-        <div class="kid-yay-sub">Jetzt schaut ${rater ? rater.emoji + ' ' + esc(rater.name) : 'jemand'} drüber 👀</div>
+        <div class="kid-yay-text">${after.done ? 'Geschafft! 🎉' : 'Toll gemeldet! 🎉'}</div>
+        <div class="kid-yay-sub">${after.done
+          ? `⭐ ${t.points} Sterne für dich!`
+          : `Jetzt schaut ${rater ? rater.emoji + ' ' + esc(rater.name) : 'jemand'} drüber 👀`}</div>
       </div>`);
       focus.querySelector('.kid-focus-inner').replaceWith(yay);
-      speak('Toll gemeldet! Jetzt wird geschaut.');
+      speak(after.done ? 'Super gemacht! Die Sterne gehören dir.' : 'Toll gemeldet! Jetzt wird geschaut.');
       setTimeout(() => { focus.remove(); renderBoard(); }, 1900);
     });
     overlay.appendChild(focus);
